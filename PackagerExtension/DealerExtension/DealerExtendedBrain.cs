@@ -35,18 +35,21 @@ namespace PackagerExtension.DealerExtension
 
         public void AddOrderableItemsFromStorage(StorageEntity storageEntity)
         {
+            //Core.MelonLogger.Msg($"Adding orderable items from storage: {storageEntity.name}");
             if (storageEntity == null) return;
             if (IsGettingItems) return;
             IsGettingItems = true;
-            List<ProductDefinition> orderableProducts = Dealer.GetOrderableProducts().ToArray().ToList();
-            Core.MelonLogger.Msg(string.Join(", ", orderableProducts));
+            Core.MelonLogger.Msg($"Getting orderable items from storage: {storageEntity.name}, IsGettingItems: {IsGettingItems}");
             List<ItemInstance> items = storageEntity.GetAllItems().ToArray().ToList();
             foreach (ItemInstance item in items)
             {
+                Core.MelonLogger.Msg($"Checking item: {item.Name}");
                 if (item == null) continue;
-                if (!orderableProducts.Find(x => x.ID == item.ID)) continue;
+                if (item.Name.Contains("Unpackaged")) continue;     
+                if (item.Category != EItemCategory.Product) continue;
                 Dealer.AddItemToInventory(item);
             }
+            IsGettingItems = false;
         }
     }
 }

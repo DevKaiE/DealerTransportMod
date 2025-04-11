@@ -125,7 +125,7 @@ namespace PackagerExtension.DealerExtension
                     bool needsItems = dealerEx.NeedsItems;
                     if (!needsItems) break;
                     //Core.MelonLogger.Msg($"Checking dealer: {dealer.fullName}, Current Contract: {dealer.currentContract.Customer.name}");
-                    if (dealer.currentContract) break;
+                    //if (dealer.currentContract) break;
 
                     StorageEntity storageEntity = kvp.Key;
                     if (storageEntity == null) break;
