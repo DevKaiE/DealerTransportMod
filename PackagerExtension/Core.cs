@@ -1,4 +1,6 @@
-﻿using HarmonyLib;
+﻿using EmployeeExtender.Utils;
+using HarmonyLib;
+using Il2CppScheduleOne.Economy;
 using Il2CppScheduleOne.PlayerScripts;
 using MelonLoader;
 using PackagerExtension;
@@ -29,6 +31,7 @@ namespace PackagerExtension
             {
                 MainSceneLoaded = true;
                 MelonLogger.Msg("Main scene loaded.");
+                InitializeExtendedDealers();
             }
         }
 
@@ -44,6 +47,17 @@ namespace PackagerExtension
         {
             if (!MainSceneLoaded) return;         
             DealerStorageManager.CheckDealerStorage();
+        }
+
+        public void InitializeExtendedDealers()
+        {
+            List<Dealer> dealers = GameUtils.GetAllDealers();
+            foreach (Dealer dealer in dealers)
+            {
+                if (dealer == null) continue;
+                DealerExtendedBrain dealerExtendedBrain = new DealerExtendedBrain(dealer);
+                DealerStorageManager.AddDealerExtendedBrain(dealerExtendedBrain);
+            }
         }
     }
 }

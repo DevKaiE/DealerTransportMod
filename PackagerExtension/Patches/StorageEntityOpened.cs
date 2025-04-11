@@ -14,7 +14,7 @@ namespace PackagerExtension.Patches
         public static void Postfix(StorageMenu __instance, StorageEntity entity)
         {
             Core.MelonLogger.Msg($"StorageEntity opened: {entity.name}");
-            Dealer assignedDealer = Core.DealerStorageManager.GetDealerFromStorage(entity);
+            Dealer assignedDealer = Core.DealerStorageManager.GetDealerFromStorage(entity).Dealer;
             DealerExtensionUI extensionUI = Core.DealerStorageManager.GetDealerExtensionUI(entity);
             if (extensionUI == null)
             {

@@ -9,18 +9,20 @@ namespace PackagerExtension.DealerExtension
     public class DealerStorageManager
     {
 
-        private static Dictionary<StorageEntity, Dealer> _dealerStorageDictionary;
+        private static Dictionary<StorageEntity, DealerExtendedBrain> _dealerStorageDictionary;
         private static Dictionary<StorageEntity, DealerExtensionUI> _dealerStorageUIDictionary;
         private static Dictionary<StorageMenu, StorageEntity> _storageMenuStorageEntityDictionary;
+        private static List<DealerExtendedBrain> _dealerExtendedBrainList;
 
         public DealerStorageManager()
         {
-            _dealerStorageDictionary = new Dictionary<StorageEntity, Dealer>();
+            _dealerStorageDictionary = new Dictionary<StorageEntity, DealerExtendedBrain>();
             _dealerStorageUIDictionary = new Dictionary<StorageEntity, DealerExtensionUI>();
             _storageMenuStorageEntityDictionary = new Dictionary<StorageMenu, StorageEntity>();
+            _dealerExtendedBrainList = new List<DealerExtendedBrain>();
         }
 
-        public void SetDealerToStorage(StorageEntity storageEntity, Dealer dealer)
+        public void SetDealerToStorage(StorageEntity storageEntity, DealerExtendedBrain dealer)
         {
             if (!_dealerStorageDictionary.ContainsKey(storageEntity))
             {
@@ -40,7 +42,7 @@ namespace PackagerExtension.DealerExtension
             }
         }
 
-        public StorageEntity GetStorageFromDealer(Dealer dealer)
+        public StorageEntity GetStorageFromDealer(DealerExtendedBrain dealer)
         {
             if (_dealerStorageDictionary.ContainsValue(dealer))
             {
@@ -49,7 +51,7 @@ namespace PackagerExtension.DealerExtension
             return null;
         }
 
-        public Dealer GetDealerFromStorage(StorageEntity storageEntity)
+        public DealerExtendedBrain GetDealerFromStorage(StorageEntity storageEntity)
         {
             if (_dealerStorageDictionary.ContainsKey(storageEntity))
             {
@@ -100,30 +102,35 @@ namespace PackagerExtension.DealerExtension
             }
         }
 
+        public void AddDealerExtendedBrain(DealerExtendedBrain dealer)
+        {
+            if (_dealerExtendedBrainList.Contains(dealer)) return;
+            _dealerExtendedBrainList.Add(dealer);
+        }
+
+        public List<DealerExtendedBrain> GetAllDealersExtendedBrain()
+        {
+            return _dealerExtendedBrainList;
+        }
+
         public void CheckDealerStorage()
         {
             foreach (var kvp in _dealerStorageDictionary)
             {
                 if (kvp.Value != null)
                 {
-                    Dealer dealer = kvp.Value;
-                    bool needsItems = DealerExtendedBrain.NeedsItems(dealer);
+                    DealerExtendedBrain dealerEx = kvp.Value;
+                    Dealer dealer = dealerEx.Dealer;
+                    dealerEx.CalculateNeedsItems();
+                    bool needsItems = dealerEx.NeedsItems;
                     if (!needsItems) break;
                     //Core.MelonLogger.Msg($"Checking dealer: {dealer.fullName}, Current Contract: {dealer.currentContract.Customer.name}");
                     if (dealer.currentContract) break;
+
                     StorageEntity storageEntity = kvp.Key;
                     if (storageEntity == null) break;
-                    List<ItemInstance> items = storageEntity.GetAllItems().ToArray().ToList();
-                    ProductManager productManager = ProductManager.Instance;
-                    List<ProductDefinition> products = productManager.AllProducts.ToArray().ToList();                    
-                    foreach (ItemInstance item in items)
-                    {
-                        if (item != null && item.Category == EItemCategory.Product && products.Find(p => p.ID == item.ID))
-                        {
-                            dealer.AddItemToInventory(item);
-                            Core.MelonLogger.Msg($"Added item: {item.Name} to dealer: {dealer.fullName}");
-                        }
-                    }
+
+                    dealerEx.AddOrderableItemsFromStorage(storageEntity);
 
                 }
             }

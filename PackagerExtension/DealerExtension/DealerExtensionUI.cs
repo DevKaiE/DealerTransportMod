@@ -15,7 +15,7 @@ namespace PackagerExtension.DealerExtension
         public Il2CppSystem.Guid UIGUID { get; private set; }
         public StorageMenu StorageMenu { get; private set; }
         public StorageEntity StorageEntity { get; private set; }
-        public Dealer AssignedDealer { get; private set; }
+        public DealerExtendedBrain AssignedDealer { get; private set; }
         public GameObject DealerUIObject { get; private set; }
         public GameObject Button { get; private set; }
 
@@ -37,7 +37,7 @@ namespace PackagerExtension.DealerExtension
             }
         }
 
-        public void CreateDealerStorageUI(StorageMenu menu, Dealer assignedDealer)
+        public void CreateDealerStorageUI(StorageMenu menu, DealerExtendedBrain assignedDealer)
         {
             GameObject panel = null;
             RectTransform panelRect = null;
@@ -67,7 +67,7 @@ namespace PackagerExtension.DealerExtension
             // Button
             float buttonSpacing = 60f;
             float startY = 0f;
-            string buttonText = assignedDealer != null ? assignedDealer.fullName : "No Dealer";
+            string buttonText = assignedDealer != null ? assignedDealer.Dealer.fullName : "No Dealer";
 
             // Uncomment this line and make sure it handles null assignedDealer
             Button = FlexiblePopup.CreateButton(panel.transform, $"AssignedDealer", buttonText, new Vector2(0, startY - buttonSpacing), () => OnAssignedDealerButtonClicked());
@@ -80,12 +80,12 @@ namespace PackagerExtension.DealerExtension
             DealerUIObject.SetActive(open);
         }
 
-        public void SetDealer(Dealer dealer)
+        public void SetDealer(DealerExtendedBrain dealer)
         {
             AssignedDealer = dealer;
             if (Button != null)
             {
-                Button.GetComponentInChildren<Text>().text = dealer != null ? dealer.fullName : "No Dealer";
+                Button.GetComponentInChildren<Text>().text = dealer != null ? dealer.Dealer.fullName : "No Dealer";
             }
         }
 
@@ -121,8 +121,8 @@ namespace PackagerExtension.DealerExtension
             if (!string.IsNullOrEmpty(dealerChoice) && dealerChoice != "None")
             {
                 Core.MelonLogger.Msg($"Selected dealer: {dealerChoice}");
-                Dealer selectedDealer = GameUtils.GetAllDealers()
-                    .FirstOrDefault(d => d.name == dealerChoice);
+                DealerExtendedBrain selectedDealer = Core.DealerStorageManager.GetAllDealersExtendedBrain()
+                    .FirstOrDefault(d => d.Dealer.name == dealerChoice);
                 if (selectedDealer != null)
                 {
                     Core.DealerStorageManager.SetDealerToStorage(StorageEntity, selectedDealer);
