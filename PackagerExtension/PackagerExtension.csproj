@@ -469,6 +469,7 @@
 		<Compile Include="Patches\StorageEntityOpened.cs" />
 		<Compile Include="UI\FlexiblePopup.cs" />
 		<Compile Include="Utils\GameUtils.cs" />
+		<Compile Include="Utils\Messages.cs" />
 	</ItemGroup>
 	
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">

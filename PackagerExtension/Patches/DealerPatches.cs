@@ -1,26 +1,21 @@
 ﻿using HarmonyLib; 
 using Il2CppScheduleOne.Economy;
+using Il2CppScheduleOne.NPCs;
 using Il2CppScheduleOne.Quests;
 using Il2CppScheduleOne.Storage;
 using PackagerExtension;
+using UnityEngine;
 
 namespace PackagerExtension.Patches
 {
-    [HarmonyPatch(typeof(Dealer), nameof(Dealer.CustomerContractStarted))]
-    public static class CustomerContractStartedPatch
+    [HarmonyPatch(typeof(NPC), nameof(NPC.Update))]
+    public static class NPCUpdatePatch
     {
-        public static void Postfix(Dealer __instance, Contract contract)
+        public static void Postfix(NPC __instance)
         {
-            Core.MelonLogger.Msg($"Customer contract started for dealer: {__instance.fullName}, Contract: {contract.Customer.name}");
-        }
-    }
-
-    [HarmonyPatch(typeof(Dealer), nameof(Dealer.CustomerContractEnded))]
-    public static class CustomerContractEndeddPatch
-    {
-        public static void Postfix(Dealer __instance, Contract contract)
-        {
-            Core.MelonLogger.Msg($"Customer contract ended for dealer: {__instance.fullName}, Contract: {contract.Customer.name}");
+            Vector3 position = __instance.transform.position;
+            //Core.MelonLogger.Msg($"NPC Position: x {position.x}, y {position.y}, z {position.z}");
+            //Core.MelonLogger.Msg($"NPC Destination: {__instance.Movement.CurrentDestination}");
         }
     }
 }

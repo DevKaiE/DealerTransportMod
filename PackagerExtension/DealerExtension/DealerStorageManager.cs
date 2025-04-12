@@ -3,16 +3,22 @@ using Il2CppScheduleOne.ItemFramework;
 using Il2CppScheduleOne.Product;
 using Il2CppScheduleOne.Storage;
 using Il2CppScheduleOne.UI;
+using UnityEngine;
 
 namespace PackagerExtension.DealerExtension
 {
     public class DealerStorageManager
     {
+        private Dictionary<StorageEntity, DealerExtendedBrain> _dealerStorageDictionary;
+        private Dictionary<StorageEntity, DealerExtensionUI> _dealerStorageUIDictionary;
+        private Dictionary<StorageMenu, StorageEntity> _storageMenuStorageEntityDictionary;
+        private List<DealerExtendedBrain> _dealerExtendedBrainList;
 
-        private static Dictionary<StorageEntity, DealerExtendedBrain> _dealerStorageDictionary;
-        private static Dictionary<StorageEntity, DealerExtensionUI> _dealerStorageUIDictionary;
-        private static Dictionary<StorageMenu, StorageEntity> _storageMenuStorageEntityDictionary;
-        private static List<DealerExtendedBrain> _dealerExtendedBrainList;
+        // Configuration
+        private float _checkInterval = 60f; // Check dealer storage every 60 seconds
+        private float _lastCheckTime = 0f;
+        private bool _isEnabled = true;
+
 
         public DealerStorageManager()
         {
@@ -115,25 +121,63 @@ namespace PackagerExtension.DealerExtension
 
         public void CheckDealerStorage()
         {
-            foreach (var kvp in _dealerStorageDictionary)
+            // Only check at intervals to avoid performance impact
+            if (Time.time - _lastCheckTime < _checkInterval || !_isEnabled)
+                return;
+
+            _lastCheckTime = Time.time;
+
+            // Use a separate list to avoid modification during iteration
+            List<KeyValuePair<StorageEntity, DealerExtendedBrain>> validPairs =
+                _dealerStorageDictionary.Where(kvp => kvp.Key != null && kvp.Value != null).ToList();
+
+            Core.MelonLogger.Msg($"Checking {validPairs.Count} dealer-storage assignments");
+
+            foreach (var kvp in validPairs)
             {
-                if (kvp.Value != null)
+                DealerExtendedBrain dealerEx = kvp.Value;
+                StorageEntity storageEntity = kvp.Key;
+
+                // Check if objects are still valid
+                if (dealerEx.Dealer == null || storageEntity == null)
                 {
-                    DealerExtendedBrain dealerEx = kvp.Value;
-                    Dealer dealer = dealerEx.Dealer;
-                    dealerEx.CalculateNeedsItems();
-                    bool needsItems = dealerEx.NeedsItems;
-                    if (!needsItems) break;
-                    //Core.MelonLogger.Msg($"Checking dealer: {dealer.fullName}, Current Contract: {dealer.currentContract.Customer.name}");
-                    //if (dealer.currentContract) break;
-
-                    StorageEntity storageEntity = kvp.Key;
-                    if (storageEntity == null) break;
-
-                    dealerEx.AddOrderableItemsFromStorage(storageEntity);
-
+                    Core.MelonLogger.Warning($"Found invalid dealer or storage reference, cleaning up");
+                    // Clean up invalid entries
+                    _dealerStorageDictionary.Remove(kvp.Key);
+                    continue;
                 }
+
+                // Try to have the dealer collect items
+                dealerEx.TryCollectItemsFromStorage(storageEntity);
             }
+        }
+
+        // New methods for configuration
+        public void SetCheckInterval(float seconds)
+        {
+            _checkInterval = Mathf.Max(10f, seconds); // Minimum 10 seconds
+        }
+
+        public void EnableAutoCollection(bool enabled)
+        {
+            _isEnabled = enabled;
+        }
+
+        public bool IsAutoCollectionEnabled()
+        {
+            return _isEnabled;
+        }
+
+        // Get collection statistics
+        public string GetCollectionStats()
+        {
+            int totalDealers = _dealerExtendedBrainList.Count;
+            int assignedDealers = _dealerStorageDictionary.Values.Count(d => d != null);
+            int totalItemsCollected = _dealerExtendedBrainList.Sum(d => d.TotalItemsCollected);
+
+            return $"Assigned Dealers: {assignedDealers}/{totalDealers}\n" +
+                   $"Total Items Collected: {totalItemsCollected}";
+
         }
     }
 }
