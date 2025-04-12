@@ -28,8 +28,37 @@ namespace PackagerExtension.DealerExtension
             _dealerExtendedBrainList = new List<DealerExtendedBrain>();
         }
 
-        public void SetDealerToStorage(StorageEntity storageEntity, DealerExtendedBrain dealer)
+        public bool IsDealerAssignedToAnyStorage(DealerExtendedBrain dealer)
         {
+            return _dealerStorageDictionary.Values.Any(d => d == dealer);
+        }
+
+        public StorageEntity GetAssignedStorageForDealer(DealerExtendedBrain dealer)
+        {
+            return _dealerStorageDictionary.FirstOrDefault(kvp => kvp.Value == dealer).Key;
+        }
+
+        public bool SetDealerToStorage(StorageEntity storageEntity, DealerExtendedBrain dealer)
+        {
+            // Check if this dealer is already assigned to another storage
+            StorageEntity existingStorage = GetAssignedStorageForDealer(dealer);
+
+            // If dealer is already assigned to another storage, don't allow it
+            if (existingStorage != null && existingStorage != storageEntity)
+            {
+                Core.MelonLogger.Msg($"Dealer {dealer.Dealer.fullName} is already assigned to {existingStorage.name}");
+                return false;
+            }
+
+            // If there's already a different dealer assigned to this storage, replace them
+            if (_dealerStorageDictionary.ContainsKey(storageEntity) &&
+                _dealerStorageDictionary[storageEntity] != null &&
+                _dealerStorageDictionary[storageEntity] != dealer)
+            {
+                Core.MelonLogger.Msg($"Replacing dealer {_dealerStorageDictionary[storageEntity].Dealer.fullName} with {dealer.Dealer.fullName} for storage {storageEntity.name}");
+            }
+
+            // Update or add the assignment
             if (!_dealerStorageDictionary.ContainsKey(storageEntity))
             {
                 _dealerStorageDictionary.Add(storageEntity, dealer);
@@ -38,6 +67,8 @@ namespace PackagerExtension.DealerExtension
             {
                 _dealerStorageDictionary[storageEntity] = dealer;
             }
+
+            return true;
         }
 
         public void RemoveDealerFromStorage(StorageEntity storageEntity)

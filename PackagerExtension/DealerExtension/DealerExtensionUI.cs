@@ -7,6 +7,7 @@ using Il2CppSystem;
 using Il2CppScheduleOne.Storage;
 using EmployeeExtender.Utils;
 using MelonLoader;
+using PackagerExtension.Utils;
 
 namespace PackagerExtension.DealerExtension
 {
@@ -99,6 +100,7 @@ namespace PackagerExtension.DealerExtension
             SetDealer(null);
             Core.DealerStorageManager.RemoveDealerFromStorage(StorageEntity);
         }
+
         private System.Collections.IEnumerator HandleDealerSelection()
         {
             List<(string, string)> dealerOptions = GameUtils.GetRecruitedDealers()
@@ -123,10 +125,31 @@ namespace PackagerExtension.DealerExtension
                 Core.MelonLogger.Msg($"Selected dealer: {dealerChoice}");
                 DealerExtendedBrain selectedDealer = Core.DealerStorageManager.GetAllDealersExtendedBrain()
                     .FirstOrDefault(d => d.Dealer.name == dealerChoice);
+
                 if (selectedDealer != null)
                 {
-                    Core.DealerStorageManager.SetDealerToStorage(StorageEntity, selectedDealer);
-                    SetDealer(selectedDealer);
+                    // Check if this dealer is already assigned to another storage
+                    StorageEntity existingStorage = Core.DealerStorageManager.GetAssignedStorageForDealer(selectedDealer);
+
+                    if (existingStorage != null && existingStorage != StorageEntity)
+                    {
+                        // Dealer is already assigned to another storage, show a funny message
+                        string message = Messages.GetRandomDealerAlreadyAssignedMessage();
+                        Core.MelonLogger.Msg($"Dealer {selectedDealer.Dealer.fullName} is already assigned to {existingStorage.name}");
+
+                        // Send a funny message from the dealer
+                        selectedDealer.Dealer.SendTextMessage(message);
+                    }
+                    else
+                    {
+                        // Dealer is not assigned yet or is assigned to this storage, proceed with assignment
+                        bool success = Core.DealerStorageManager.SetDealerToStorage(StorageEntity, selectedDealer);
+                        if (success)
+                        {
+                            SetDealer(selectedDealer);
+                            Core.MelonLogger.Msg($"Successfully assigned {selectedDealer.Dealer.fullName} to {StorageEntity.name}");
+                        }
+                    }
                 }
             }
         }

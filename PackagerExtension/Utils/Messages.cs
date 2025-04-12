@@ -50,6 +50,30 @@
             "Stash run was a fail. Competition gonna eat our lunch if we don't stock up."
         };
 
+        public static List<string> DealerAlreadyAssignedMessages = new List<string>
+        {
+            "Yo boss, I can't be in two places at once! Already got a stash spot to look after.",
+            "What you think I am, Superman? Can't handle multiple spots, I'm a hustler not a superhero!",
+            "Nah, that's too much heat. One stash is risky enough, two is just askin' to get caught slippin'.",
+            "Boss, you trippin'! I already got a rack to run. Can't split myself like a damn cell.",
+            "C'mon now, do I look like I got a twin brother? Already assigned to another stash!",
+            "You want the feds all up in our business? One spot per dealer, that's operational security 101!",
+            "Look, I ain't no octopus with eight arms. Got my hands full with the spot I already got.",
+            "Yo, I may be good, but I ain't got that clone technology! Already working another stash.",
+            "What, you think I can teleport? Already committed to another storage spot, feel me?",
+            "Nah, that's bad business. Can't manage two spots without droppin' the ball on both.",
+            "You payin' me enough for ONE job. Want me at two spots? Then we gotta renegotiate my cut!",
+            "Boss, you know the rules: one dealer, one stash. That's how we stay under the radar.",
+            "I look like I'm about that corporate ladder life? One hustle at a time is how I roll.",
+            "My momma didn't raise no magician! Can't be in two places at once, already got a spot.",
+            "Bruh, that's amateur hour. Spreadin' myself thin is how mistakes happen. One rack only!",
+            "Listen, multi-tasking is for office workers. Street hustlers need focus. Got my spot already.",
+            "You must be smokin' your own supply! I'm already assigned to another stash, can't do both.",
+            "What's next, you want me to cook and clean too? Already got a storage assignment!",
+            "Nah fam, that's a recipe for disaster. One dealer, one stash - that's how we maintain quality control.",
+            "I ain't got a twin brother hidin' somewhere! Already committed to another rack, boss."
+        };
+
         public static string GetRandomItemCollectionMessage(bool success)
         {
             if (success)
@@ -62,6 +86,12 @@
                 int index = UnityEngine.Random.Range(0, DealerNoItemsFoundMessages.Count);
                 return DealerNoItemsFoundMessages[index];
             }
+        }
+
+        public static string GetRandomDealerAlreadyAssignedMessage()
+        {
+            int index = UnityEngine.Random.Range(0, DealerAlreadyAssignedMessages.Count);
+            return DealerAlreadyAssignedMessages[index];
         }
     }
 }
