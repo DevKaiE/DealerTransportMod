@@ -1,4 +1,4 @@
-﻿using EmployeeExtender.Utils;
+﻿using DealerSelfSupplySystem.Utils;
 using HarmonyLib;
 using Il2CppScheduleOne.Economy;
 using Il2CppScheduleOne.PlayerScripts;
@@ -127,6 +127,20 @@ namespace DealerSelfSupplySystem
             if (Input.GetKeyDown(KeyCode.F9))
             {
                 SavePoint.SAVE_COOLDOWN = 0f;
+            }
+
+            // Handle UI updates for dealer extension UI
+            if (MainSceneLoaded && dealersInitialized)
+            {
+                // Update all active dealer UIs that are open
+                foreach (var uiPair in DealerStorageManager._dealerStorageUIDictionary)
+                {
+                    if (uiPair.Value != null && uiPair.Value.DealerUIObject != null &&
+                        uiPair.Value.DealerUIObject.activeSelf)
+                    {
+                        uiPair.Value.Update();
+                    }
+                }
             }
         }
     }

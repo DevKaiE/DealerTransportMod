@@ -1,6 +1,6 @@
 ﻿using Il2CppScheduleOne.Economy;
 
-namespace EmployeeExtender.Utils
+namespace DealerSelfSupplySystem.Utils
 {
     internal class GameUtils
     {

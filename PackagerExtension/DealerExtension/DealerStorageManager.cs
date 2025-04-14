@@ -1,4 +1,4 @@
-﻿using EmployeeExtender.Utils;
+﻿using DealerSelfSupplySystem.Utils;
 using Il2CppNewtonsoft.Json;
 using Il2CppScheduleOne.Economy;
 using Il2CppScheduleOne.ItemFramework;
@@ -35,7 +35,7 @@ namespace DealerSelfSupplySystem.DealerExtension
     public class DealerStorageManager
     {
         internal Dictionary<StorageEntity, DealerExtendedBrain> _dealerStorageDictionary;
-        private Dictionary<StorageEntity, DealerExtensionUI> _dealerStorageUIDictionary;
+        internal Dictionary<StorageEntity, DealerExtensionUI> _dealerStorageUIDictionary;
         private Dictionary<StorageMenu, StorageEntity> _storageMenuStorageEntityDictionary;
         private List<DealerExtendedBrain> _dealerExtendedBrainList;
 
@@ -64,32 +64,57 @@ namespace DealerSelfSupplySystem.DealerExtension
 
         public bool SetDealerToStorage(StorageEntity storageEntity, DealerExtendedBrain dealer)
         {
+            // If the config allows multiple dealers per storage, we don't need to check
+            // if dealer is already assigned elsewhere
+            bool allowMultipleDealers = Config.multipleDealersPerStorage.Value;
+
             // Check if this dealer is already assigned to another storage
             StorageEntity existingStorage = GetAssignedStorageForDealer(dealer);
 
-            // If dealer is already assigned to another storage, don't allow it
-            if (existingStorage != null && existingStorage != storageEntity)
+            // If dealer is already assigned to another storage and multiple assignments aren't allowed, don't proceed
+            if (!allowMultipleDealers && existingStorage != null && existingStorage != storageEntity)
             {
                 Core.MelonLogger.Msg($"Dealer {dealer.Dealer.fullName} is already assigned to {existingStorage.name}");
                 return false;
             }
 
-            // If there's already a different dealer assigned to this storage, replace them
-            if (_dealerStorageDictionary.ContainsKey(storageEntity) &&
-                _dealerStorageDictionary[storageEntity] != null &&
-                _dealerStorageDictionary[storageEntity] != dealer)
+            // If multiple dealers are allowed, we can assign a dealer to multiple storages
+            // If multiple dealers per storage are allowed, we can add new entries
+            if (allowMultipleDealers)
             {
-                Core.MelonLogger.Msg($"Replacing dealer {_dealerStorageDictionary[storageEntity].Dealer.fullName} with {dealer.Dealer.fullName} for storage {storageEntity.name}");
-            }
-
-            // Update or add the assignment
-            if (!_dealerStorageDictionary.ContainsKey(storageEntity))
-            {
-                _dealerStorageDictionary.Add(storageEntity, dealer);
+                // Add a new entry if it doesn't exist yet
+                if (!_dealerStorageDictionary.ContainsKey(storageEntity) ||
+                    _dealerStorageDictionary[storageEntity] == null)
+                {
+                    _dealerStorageDictionary[storageEntity] = dealer;
+                }
+                else
+                {
+                    // We could create a new data structure to handle multiple dealers per storage
+                    // For now, just replace the existing dealer
+                    _dealerStorageDictionary[storageEntity] = dealer;
+                    Core.MelonLogger.Msg($"Replacing dealer {_dealerStorageDictionary[storageEntity].Dealer.fullName} with {dealer.Dealer.fullName} for storage {storageEntity.name}");
+                }
             }
             else
             {
-                _dealerStorageDictionary[storageEntity] = dealer;
+                // Original behavior - replace any existing dealer
+                if (_dealerStorageDictionary.ContainsKey(storageEntity) &&
+                    _dealerStorageDictionary[storageEntity] != null &&
+                    _dealerStorageDictionary[storageEntity] != dealer)
+                {
+                    Core.MelonLogger.Msg($"Replacing dealer {_dealerStorageDictionary[storageEntity].Dealer.fullName} with {dealer.Dealer.fullName} for storage {storageEntity.name}");
+                }
+
+                // Update or add the assignment
+                if (!_dealerStorageDictionary.ContainsKey(storageEntity))
+                {
+                    _dealerStorageDictionary.Add(storageEntity, dealer);
+                }
+                else
+                {
+                    _dealerStorageDictionary[storageEntity] = dealer;
+                }
             }
 
             return true;

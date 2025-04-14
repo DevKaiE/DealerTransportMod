@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using System;
 using System.Threading.Tasks;
 
-namespace EmployeeExtender.UI
+namespace DealerSelfSupplySystem.UI
 {
     internal class FlexiblePopup
     {
@@ -144,7 +144,7 @@ namespace EmployeeExtender.UI
             }
         }
 
-        public static GameObject CreateButton(Transform parent, string name, string buttonText, Vector2 position, Action onClickAction, Vector2? size = null)
+        public static GameObject CreateButton(Transform parent, string name, string buttonText, Vector2 position, Action onClickAction, Vector2? size = null, EButtonType buttonType = EButtonType.Primary)
         {
             Vector2 buttonSize = size ?? new Vector2(200, 40);
 
@@ -152,7 +152,9 @@ namespace EmployeeExtender.UI
             buttonObj.transform.SetParent(parent, false);
 
             Image buttonImage = buttonObj.AddComponent<Image>();
-            buttonImage.color = new Color(0.3f, 0.3f, 0.3f, 1f);
+            buttonImage.color = Styling.PRIMARY_COLOR;
+            if (buttonType == EButtonType.Secondary) buttonImage.color = Styling.SECONDARY_COLOR;
+            if (buttonType == EButtonType.Destructive) buttonImage.color = Styling.DESTRUCTIVE_COLOR;
 
             Button button = buttonObj.AddComponent<Button>();
             button.targetGraphic = buttonImage;

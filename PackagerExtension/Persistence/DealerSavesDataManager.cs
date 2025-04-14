@@ -170,12 +170,12 @@ namespace DealerSelfSupplySystem.Persistence
             int restoredCount = 0;
 
             // Get all dealers and storage entities
-            List<Dealer> allDealers = EmployeeExtender.Utils.GameUtils.GetRecruitedDealers();
+            List<Dealer> allDealers = DealerSelfSupplySystem.Utils.GameUtils.GetRecruitedDealers();
             if (allDealers.Count == 0)
             {
                 //Core.MelonLogger.Warning("No dealers found, will retry in 5 seconds");
                 yield return new WaitForSeconds(5f);
-                allDealers = EmployeeExtender.Utils.GameUtils.GetRecruitedDealers();
+                allDealers = DealerSelfSupplySystem.Utils.GameUtils.GetRecruitedDealers();
                 if (allDealers.Count == 0)
                 {
                     //Core.MelonLogger.Error("Still no dealers found after retry, assignment restoration failed");
