@@ -7,7 +7,7 @@ using DealerSelfSupplySystem;
 using DealerSelfSupplySystem.DealerExtension;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(DealerSelfSupplySystem.Core), "PackagerExtension", "1.0.0", "KaiNoodles", null)]
+[assembly: MelonInfo(typeof(DealerSelfSupplySystem.Core), "DealerSelfSupplySystem", "1.0.0", "KaiNoodles", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 namespace DealerSelfSupplySystem
@@ -18,11 +18,14 @@ namespace DealerSelfSupplySystem
         public static MelonLogger.Instance MelonLogger { get; private set; }
         public static DealerStorageManager DealerStorageManager { get; private set; }
         public static bool MainSceneLoaded { get; private set; } = false;
+        public static Config Config { get; private set; }
         public override void OnInitializeMelon()
         {
             MelonLogger = LoggerInstance;
             MelonLogger.Msg("Initialization.");
+            Config = new Config();
             DealerStorageManager = new DealerStorageManager();
+            
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -41,6 +44,7 @@ namespace DealerSelfSupplySystem
             {
                 MainSceneLoaded = false;
                 MelonLogger.Msg("Main scene unloaded.");
+                DealerStorageManager.CleanUp();
             }
         }
         public override void OnLateUpdate()

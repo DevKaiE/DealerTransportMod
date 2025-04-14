@@ -8,30 +8,33 @@ namespace EmployeeExtender.UI
 {
     internal class FlexiblePopup
     {
-        // Event for when the popup is closed without a choice
         public static event Action OnPopupCancelled;
 
-        // Reference to the popup GameObject
+        private static readonly Vector2 DEFAULT_POSITION = new Vector2(0.5f, 0.5f);
         private static GameObject popupObject;
-        private static TaskCompletionSource<string> choiceTaskCompletionSource; // String to represent the chosen option
+        private static TaskCompletionSource<string> choiceTaskCompletionSource;
 
         public static void Initialize()
         {
-            // This is only called once when the mod loads
+            // Called once when the mod loads
         }
 
-        public static async Task<string> Show(string title, (string buttonText, string choiceResult)[] options)
+        public static Task<string> Show(string title, (string buttonText, string choiceResult)[] options)
+        {
+            return Show(title, options, DEFAULT_POSITION);
+        }
+
+        public static async Task<string> Show(string title, (string buttonText, string choiceResult)[] options, Vector2 position)
         {
             choiceTaskCompletionSource = new TaskCompletionSource<string>();
 
-            // Create a simple dialog if it doesn't exist or needs updating
             if (popupObject == null)
             {
-                CreateDialog(title, options);
+                CreateDialog(title, options, position);
             }
             else
             {
-                UpdateDialog(title, options); // Update if it already exists
+                UpdateDialog(title, options);
             }
 
             if (popupObject != null)
@@ -41,7 +44,7 @@ namespace EmployeeExtender.UI
             else
             {
                 MelonLogger.Error("Failed to create or find FlexiblePopup object.");
-                choiceTaskCompletionSource.SetResult(null); // Indicate failure
+                choiceTaskCompletionSource.SetResult(null);
             }
 
             return await choiceTaskCompletionSource.Task;
@@ -49,8 +52,13 @@ namespace EmployeeExtender.UI
 
         private static void CreateDialog(string title, (string buttonText, string choiceResult)[] options)
         {
-            GameObject panel = null; // Declare panel outside try block
-            RectTransform panelRect = null; // Declare panelRect outside try block
+            CreateDialog(title, options, DEFAULT_POSITION);
+        }
+
+        private static void CreateDialog(string title, (string buttonText, string choiceResult)[] options, Vector2 position)
+        {
+            GameObject panel = null;
+            RectTransform panelRect = null;
 
             try
             {
@@ -67,27 +75,24 @@ namespace EmployeeExtender.UI
                 Image panelImage = panel.AddComponent<Image>();
                 panelImage.color = new Color(0.1f, 0.1f, 0.1f, 0.9f);
                 panelRect = panel.GetComponent<RectTransform>();
-                panelRect.anchorMin = new Vector2(0.5f, 0.5f);
-                panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-                panelRect.pivot = new Vector2(0.5f, 0.5f);
-                panelRect.sizeDelta = new Vector2(300, 200 + (options.Length - 2) * 50); // Adjust height based on options
-                panelRect.anchoredPosition = Vector2.zero;
+                panelRect.anchorMin = position;
+                panelRect.anchorMax = position;
+                panelRect.pivot = position;
+                panelRect.sizeDelta = new Vector2(300, 200 + (options.Length - 2) * 50);
+                panelRect.anchoredPosition = position;
 
-                // Title
-                CreateText(panel.transform, "Title", title, 18, new Vector2(0, panelRect.sizeDelta.y / 2f - 30)); // Line 122
+                CreateText(panel.transform, "Title", title, 18, new Vector2(0, panelRect.sizeDelta.y / 2f - 30));
 
-                // Buttons
                 float buttonSpacing = 60f;
-                float startY = (options.Length - 1) * buttonSpacing / 2f - 30f; // Center buttons vertically
+                float startY = (options.Length - 1) * buttonSpacing / 2f - 30f;
 
                 for (int i = 0; i < options.Length; i++)
                 {
-                    int index = i; // Capture index for the lambda
+                    int index = i;
                     CreateButton(panel.transform, $"OptionButton_{i}", options[i].buttonText, new Vector2(0, startY - i * buttonSpacing), () => OnOptionButtonClicked(options[index].choiceResult));
                 }
 
-                // Close button
-                CreateButton(panel.transform, "CloseButton", "X", new Vector2(panelRect.sizeDelta.x / 2f - 15, panelRect.sizeDelta.y / 2f - 15), OnCloseButtonClicked, new Vector2(30, 30)); // Line 140
+                CreateButton(panel.transform, "CloseButton", "X", new Vector2(panelRect.sizeDelta.x / 2f - 15, panelRect.sizeDelta.y / 2f - 15), OnCloseButtonClicked, new Vector2(30, 30));
 
                 popupObject.SetActive(false);
             }
@@ -96,7 +101,7 @@ namespace EmployeeExtender.UI
                 MelonLogger.Error($"Error creating FlexiblePopup: {e.Message}\n{e.StackTrace}");
                 if (popupObject != null) GameObject.Destroy(popupObject);
                 popupObject = null;
-                choiceTaskCompletionSource?.TrySetResult(null); // Indicate failure
+                choiceTaskCompletionSource?.TrySetResult(null);
             }
         }
 
@@ -108,21 +113,18 @@ namespace EmployeeExtender.UI
                 return;
             }
 
-            // Update title
             Text titleText = popupObject.transform.Find("Panel/Title")?.GetComponent<Text>();
             if (titleText != null)
             {
                 titleText.text = title;
             }
 
-            // Update panel size based on number of options
             RectTransform panelRect = popupObject.transform.Find("Panel")?.GetComponent<RectTransform>();
             if (panelRect != null)
             {
                 panelRect.sizeDelta = new Vector2(300, 200 + (options.Length - 2) * 50);
 
-                // Clear existing buttons
-                for (int i = 0; i < 20; i++) // Use a reasonable upper limit
+                for (int i = 0; i < 20; i++)
                 {
                     Transform existingButton = panelRect.transform.Find($"OptionButton_{i}");
                     if (existingButton != null)
@@ -131,20 +133,13 @@ namespace EmployeeExtender.UI
                     }
                 }
 
-                // Recreate all buttons
                 float buttonSpacing = 60f;
                 float startY = (options.Length - 1) * buttonSpacing / 2f - 30f;
 
                 for (int i = 0; i < options.Length; i++)
                 {
-                    int index = i; // Capture index for the lambda
-                    CreateButton(
-                        panelRect.transform,
-                        $"OptionButton_{i}",
-                        options[i].buttonText,
-                        new Vector2(0, startY - i * buttonSpacing),
-                        () => OnOptionButtonClicked(options[index].choiceResult)
-                    );
+                    int index = i;
+                    CreateButton(panelRect.transform, $"OptionButton_{i}", options[i].buttonText, new Vector2(0, startY - i * buttonSpacing), () => OnOptionButtonClicked(options[index].choiceResult));
                 }
             }
         }
@@ -161,7 +156,7 @@ namespace EmployeeExtender.UI
 
             Button button = buttonObj.AddComponent<Button>();
             button.targetGraphic = buttonImage;
-            button.onClick.RemoveAllListeners(); // Clear previous listeners
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener((System.Action)onClickAction);
 
             GameObject textObj = CreateText(buttonObj.transform, "Text", buttonText, 14, Vector2.zero);
@@ -193,6 +188,7 @@ namespace EmployeeExtender.UI
             textComp.alignment = TextAnchor.MiddleCenter;
             textComp.color = Color.white;
             textComp.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+
             if (textComp.font == null)
             {
                 MelonLogger.Warning("Arial.ttf not found. UI Text may not render correctly.");
@@ -203,7 +199,7 @@ namespace EmployeeExtender.UI
             textRect.anchorMax = new Vector2(0.5f, 0.5f);
             textRect.pivot = new Vector2(0.5f, 0.5f);
             textRect.anchoredPosition = position;
-            textRect.sizeDelta = new Vector2(280, 30); // Adjusted width
+            textRect.sizeDelta = new Vector2(280, 30);
 
             return textObj;
         }
@@ -217,7 +213,7 @@ namespace EmployeeExtender.UI
 
         private static void OnCloseButtonClicked()
         {
-            choiceTaskCompletionSource?.TrySetResult(null); // Null for Cancel
+            choiceTaskCompletionSource?.TrySetResult(null);
             if (popupObject != null) popupObject.SetActive(false);
             MelonLogger.Msg("Popup closed");
             OnPopupCancelled?.Invoke();
@@ -229,7 +225,7 @@ namespace EmployeeExtender.UI
             {
                 popupObject.SetActive(false);
             }
-            choiceTaskCompletionSource?.TrySetResult(null); // Indicate cancellation
+            choiceTaskCompletionSource?.TrySetResult(null);
         }
 
         public static void Destroy()
@@ -244,30 +240,33 @@ namespace EmployeeExtender.UI
         }
 
         public static System.Collections.IEnumerator ShowPopupAndWaitForResult(
-           string title,
-           (string buttonText, string choiceResult)[] options,
-           Action<string> resultCallback)
+            string title,
+            (string buttonText, string choiceResult)[] options,
+            Action<string> resultCallback)
         {
-            Task<string> choiceTask = FlexiblePopup.Show(title, options);
+            return ShowPopupAndWaitForResult(title, options, resultCallback, DEFAULT_POSITION);
+        }
+
+        public static System.Collections.IEnumerator ShowPopupAndWaitForResult(
+            string title,
+            (string buttonText, string choiceResult)[] options,
+            Action<string> resultCallback,
+            Vector2 position)
+        {
+            Task<string> choiceTask = FlexiblePopup.Show(title, options, position);
 
             while (!choiceTask.IsCompleted)
             {
                 if (choiceTask.IsFaulted || choiceTask.IsCanceled)
                 {
-                   
                     resultCallback(null);
                     yield break;
                 }
                 yield return null;
             }
 
-            // Pass the result to the callback
             resultCallback(choiceTask.Result);
-
-            // Ensure popup is closed
             FlexiblePopup.ClosePopup();
-
-            // Short delay to ensure UI updates properly
             yield return new WaitForSeconds(0.2f);
         }
     }

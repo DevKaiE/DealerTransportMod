@@ -19,9 +19,11 @@ namespace DealerSelfSupplySystem.DealerExtension
         public DealerExtendedBrain AssignedDealer { get; private set; }
         public GameObject DealerUIObject { get; private set; }
         public GameObject Button { get; private set; }
+        private bool closeUIDefault;
 
         public DealerExtensionUI(StorageMenu storageMenu, StorageEntity storageEntity)
         {
+            closeUIDefault = Config.dealerStorageUIClosedByDefault.Value;
             UIGUID = new Il2CppSystem.Guid();
             StorageMenu = storageMenu;
             StorageEntity = storageEntity;
@@ -56,10 +58,10 @@ namespace DealerSelfSupplySystem.DealerExtension
             Image panelImage = panel.AddComponent<Image>();
             panelImage.color = new Color(0.1f, 0.1f, 0.1f, 0.9f);
             panelRect = panel.GetComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(0.7f, 0.5f);
-            panelRect.anchorMax = new Vector2(0.7f, 0.5f);
-            panelRect.pivot = new Vector2(0.7f, 0.5f);
-            panelRect.sizeDelta = new Vector2(300, 400);
+            panelRect.anchorMin = new Vector2(0.9f, 0.9f);
+            panelRect.anchorMax = new Vector2(0.9f, 0.9f);
+            panelRect.pivot = new Vector2(0.9f, 0.9f);
+            panelRect.sizeDelta = new Vector2(300,300);
             panelRect.anchoredPosition = Vector2.zero;
 
             // Title
@@ -116,7 +118,8 @@ namespace DealerSelfSupplySystem.DealerExtension
             yield return FlexiblePopup.ShowPopupAndWaitForResult(
                 "Choose Dealer",
                 dealerOptions.ToArray(),
-                result => dealerChoice = result
+                result => dealerChoice = result,
+                new Vector2(0.7f, 0.9f)
             );
 
             // Handle dealer selection

@@ -15,7 +15,7 @@ namespace DealerSelfSupplySystem.DealerExtension
         public bool IsProcessingItems { get; private set; } = false;
         private float lastInventoryCheckTime = 0f;
         private const float INVENTORY_CHECK_INTERVAL = 30f; // Check inventory every 30 seconds
-        private const float INVENTORY_THRESHOLD = 0.4f; // Consider dealer needs items if less than 40% of slots filled
+        private float INVENTORY_THRESHOLD; // Consider dealer needs items if less than 40% of slots filled
         private bool _canBeInturrupted = false; // Set to true if you want to allow interruption of item collection by contracts
 
         // Stats tracking
@@ -25,6 +25,7 @@ namespace DealerSelfSupplySystem.DealerExtension
         public DealerExtendedBrain(Dealer dealer)
         {
             Dealer = dealer;
+            INVENTORY_THRESHOLD = Config.dealerInventoryThreshold.Value;
         }
 
         public bool CalculateNeedsItems()

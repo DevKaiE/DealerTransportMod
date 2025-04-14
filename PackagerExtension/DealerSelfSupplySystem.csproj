@@ -461,11 +461,13 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="Config\Config.cs" />
 		<Compile Include="Core.cs" />
 		<Compile Include="DealerExtension\DealerExtendedBrain.cs" />
 		<Compile Include="DealerExtension\DealerExtensionUI.cs" />
 		<Compile Include="DealerExtension\DealerStorageManager.cs" />
 		<Compile Include="Patches\DealerPatches.cs" />
+		<Compile Include="Patches\SavePatch.cs" />
 		<Compile Include="Patches\StorageEntityOpened.cs" />
 		<Compile Include="UI\FlexiblePopup.cs" />
 		<Compile Include="Utils\GameUtils.cs" />

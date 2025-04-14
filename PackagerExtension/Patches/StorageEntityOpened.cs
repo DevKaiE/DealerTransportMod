@@ -11,6 +11,7 @@ namespace DealerSelfSupplySystem.Patches
     [HarmonyPatch(typeof(StorageMenu), nameof(StorageMenu.Open), new Type[] { typeof(StorageEntity) })]
     public static class StorageEntityOpenedPatch
     {
+        //private static bool closeUIDefault = Core.Config.dealerStorageUIClosedByDefault.Value;
         public static void Postfix(StorageMenu __instance, StorageEntity entity)
         {
             Core.MelonLogger.Msg($"StorageEntity opened: {entity.name}");
