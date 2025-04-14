@@ -244,9 +244,6 @@ namespace DealerSelfSupplySystem.DealerExtension
             // Wait a moment for game to fully initialize
             yield return new WaitForSeconds(2f);
 
-            // Wait a bit longer for entities to settle
-            yield return new WaitForSeconds(3f);
-
             int restoredCount = 0;
 
             // Get all dealers and storage entities
