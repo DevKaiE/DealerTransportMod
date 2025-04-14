@@ -10,7 +10,7 @@ using Il2CppScheduleOne.Persistence;
 using DealerSelfSupplySystem.Persistence;
 using Il2CppInterop.Runtime.Injection;
 
-[assembly: MelonInfo(typeof(DealerSelfSupplySystem.Core), "DealerSelfSupplySystem", "1.0.0", "KaiNoodles", null)]
+[assembly: MelonInfo(typeof(DealerSelfSupplySystem.Core), "DealerSelfSupplySystem", "1.1.0", "KaiNoodles", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 namespace DealerSelfSupplySystem
@@ -25,7 +25,7 @@ namespace DealerSelfSupplySystem
         public override void OnInitializeMelon()
         {
             MelonLogger = LoggerInstance;
-            MelonLogger.Msg("Initialization.");
+            MelonLogger.Msg("Initialization complete.");
             Config = new Config();
             DealerStorageManager = new DealerStorageManager();
         }

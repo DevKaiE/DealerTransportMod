@@ -9,7 +9,6 @@ namespace DealerSelfSupplySystem.Persistence
     public class DealerSaveDataManager
     {
         private const string MOD_FOLDER_NAME = "DealerSelfSupplySystem";
-
         public static void SaveData(string gameSaveFolderPath)
         {
             try
@@ -41,7 +40,20 @@ namespace DealerSelfSupplySystem.Persistence
                     }
                 }
 
-                // Rest of your code to save to file...
+                // Create folder structure for our mod's saves
+                string modSavesFolder = CreateModSaveFolder(gameSaveFolderPath);
+
+                // Use the last segment of the game save path as our save identifier
+                string saveIdentifier = Path.GetFileName(gameSaveFolderPath); // e.g., "SaveGame_1"
+                string saveFilePath = Path.Combine(modSavesFolder, $"{saveIdentifier}_dealer_storage_data.json");
+
+                // Serialize data using standard .NET serializer
+                string json = System.Text.Json.JsonSerializer.Serialize(assignments,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+
+                // Write to file
+                File.WriteAllText(saveFilePath, json);
+                Core.MelonLogger.Msg($"Successfully saved {assignments.Count} dealer assignments to {saveFilePath}");
             }
             catch (Exception ex)
             {

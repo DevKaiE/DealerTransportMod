@@ -125,7 +125,7 @@ namespace DealerSelfSupplySystem.DealerExtension
             // Handle dealer selection
             if (!string.IsNullOrEmpty(dealerChoice) && dealerChoice != "None")
             {
-                Core.MelonLogger.Msg($"Selected dealer: {dealerChoice}");
+                //Core.MelonLogger.Msg($"Selected dealer: {dealerChoice}");
                 DealerExtendedBrain selectedDealer = Core.DealerStorageManager.GetAllDealersExtendedBrain()
                     .FirstOrDefault(d => d.Dealer.name == dealerChoice);
 
@@ -138,7 +138,7 @@ namespace DealerSelfSupplySystem.DealerExtension
                     {
                         // Dealer is already assigned to another storage, show a funny message
                         string message = Messages.GetRandomDealerAlreadyAssignedMessage();
-                        Core.MelonLogger.Msg($"Dealer {selectedDealer.Dealer.fullName} is already assigned to {existingStorage.name}");
+                        //Core.MelonLogger.Msg($"Dealer {selectedDealer.Dealer.fullName} is already assigned to {existingStorage.name}");
 
                         // Send a funny message from the dealer
                         selectedDealer.Dealer.SendTextMessage(message);
@@ -150,7 +150,7 @@ namespace DealerSelfSupplySystem.DealerExtension
                         if (success)
                         {
                             SetDealer(selectedDealer);
-                            Core.MelonLogger.Msg($"Successfully assigned {selectedDealer.Dealer.fullName} to {StorageEntity.name}");
+                            //Core.MelonLogger.Msg($"Successfully assigned {selectedDealer.Dealer.fullName} to {StorageEntity.name}");
                         }
                     }
                 }

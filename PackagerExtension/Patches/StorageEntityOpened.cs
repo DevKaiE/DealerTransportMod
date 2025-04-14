@@ -14,14 +14,14 @@ namespace DealerSelfSupplySystem.Patches
         //private static bool closeUIDefault = Core.Config.dealerStorageUIClosedByDefault.Value;
         public static void Postfix(StorageMenu __instance, StorageEntity entity)
         {
-            Core.MelonLogger.Msg($"StorageEntity opened: {entity.name}");
+            //Core.MelonLogger.Msg($"StorageEntity opened: {entity.name}");
             DealerExtendedBrain assignedDealer = Core.DealerStorageManager.GetDealerFromStorage(entity);
             DealerExtensionUI extensionUI = Core.DealerStorageManager.GetDealerExtensionUI(entity);
             if (extensionUI == null)
             {
                 extensionUI = new DealerExtensionUI(__instance, entity);
                 Core.DealerStorageManager.SetDealerExtensionUI(entity, extensionUI);
-                Core.MelonLogger.Msg($"Created DealerExtensionUI for {entity.name}");
+                //Core.MelonLogger.Msg($"Created DealerExtensionUI for {entity.name}");
             }
             extensionUI.ToggleUI(true);
         }
@@ -32,13 +32,13 @@ namespace DealerSelfSupplySystem.Patches
     {
         public static void Postfix(StorageMenu __instance)
         {
-            Core.MelonLogger.Msg($"StorageEntity closed: {__instance.name}");
+            //Core.MelonLogger.Msg($"StorageEntity closed: {__instance.name}");
             StorageEntity entity = Core.DealerStorageManager.GetStorageMenu(__instance);
             if (entity == null) return;
             DealerExtensionUI extensionUI = Core.DealerStorageManager.GetDealerExtensionUI(entity);
-            Core.MelonLogger.Msg($"Removing DealerExtensionUI for {entity.name}");
+            //Core.MelonLogger.Msg($"Removing DealerExtensionUI for {entity.name}");
             if (extensionUI == null) return;
-            Core.MelonLogger.Msg($"Closing DealerExtensionUI for {entity.name}");
+            //Core.MelonLogger.Msg($"Closing DealerExtensionUI for {entity.name}");
             extensionUI.ToggleUI(false);
 
         }
@@ -51,9 +51,9 @@ namespace DealerSelfSupplySystem.Patches
         {
             
             DealerExtensionUI extensionUI = Core.DealerStorageManager.GetDealerExtensionUI(__instance);
-            Core.MelonLogger.Msg($"Removing DealerExtensionUI for {__instance.name}");
+            //Core.MelonLogger.Msg($"Removing DealerExtensionUI for {__instance.name}");
             if (extensionUI == null) return;
-            Core.MelonLogger.Msg($"Closing DealerExtensionUI for {__instance.name}");
+            //Core.MelonLogger.Msg($"Closing DealerExtensionUI for {__instance.name}");
             extensionUI.ToggleUI(false);
 
         }
