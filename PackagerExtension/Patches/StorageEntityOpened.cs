@@ -3,10 +3,10 @@ using Il2CppScheduleOne.Economy;
 using Il2CppScheduleOne.NPCs;
 using Il2CppScheduleOne.Storage;
 using Il2CppScheduleOne.UI;
-using PackagerExtension;
-using PackagerExtension.DealerExtension;
+using DealerSelfSupplySystem;
+using DealerSelfSupplySystem.DealerExtension;
 
-namespace PackagerExtension.Patches
+namespace DealerSelfSupplySystem.Patches
 {
     [HarmonyPatch(typeof(StorageMenu), nameof(StorageMenu.Open), new Type[] { typeof(StorageEntity) })]
     public static class StorageEntityOpenedPatch

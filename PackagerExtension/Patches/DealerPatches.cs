@@ -3,10 +3,10 @@ using Il2CppScheduleOne.Economy;
 using Il2CppScheduleOne.NPCs;
 using Il2CppScheduleOne.Quests;
 using Il2CppScheduleOne.Storage;
-using PackagerExtension;
+using DealerSelfSupplySystem;
 using UnityEngine;
 
-namespace PackagerExtension.Patches
+namespace DealerSelfSupplySystem.Patches
 {
     [HarmonyPatch(typeof(NPC), nameof(NPC.Update))]
     public static class NPCUpdatePatch

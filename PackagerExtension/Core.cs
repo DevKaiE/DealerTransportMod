@@ -3,14 +3,14 @@ using HarmonyLib;
 using Il2CppScheduleOne.Economy;
 using Il2CppScheduleOne.PlayerScripts;
 using MelonLoader;
-using PackagerExtension;
-using PackagerExtension.DealerExtension;
+using DealerSelfSupplySystem;
+using DealerSelfSupplySystem.DealerExtension;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(PackagerExtension.Core), "PackagerExtension", "1.0.0", "KaiNoodles", null)]
+[assembly: MelonInfo(typeof(DealerSelfSupplySystem.Core), "PackagerExtension", "1.0.0", "KaiNoodles", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
-namespace PackagerExtension
+namespace DealerSelfSupplySystem
 {
     public class Core : MelonMod
     {

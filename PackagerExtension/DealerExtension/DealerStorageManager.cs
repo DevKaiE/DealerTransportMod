@@ -5,7 +5,7 @@ using Il2CppScheduleOne.Storage;
 using Il2CppScheduleOne.UI;
 using UnityEngine;
 
-namespace PackagerExtension.DealerExtension
+namespace DealerSelfSupplySystem.DealerExtension
 {
     public class DealerStorageManager
     {

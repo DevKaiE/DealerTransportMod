@@ -7,9 +7,9 @@ using Il2CppSystem;
 using Il2CppScheduleOne.Storage;
 using EmployeeExtender.Utils;
 using MelonLoader;
-using PackagerExtension.Utils;
+using DealerSelfSupplySystem.Utils;
 
-namespace PackagerExtension.DealerExtension
+namespace DealerSelfSupplySystem.DealerExtension
 {
     public class DealerExtensionUI
     {

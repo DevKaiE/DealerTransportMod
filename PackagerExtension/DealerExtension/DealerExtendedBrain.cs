@@ -3,10 +3,10 @@ using Il2CppScheduleOne.ItemFramework;
 using Il2CppScheduleOne.Product;
 using Il2CppScheduleOne.Storage;
 using MelonLoader;
-using PackagerExtension.Utils;
+using DealerSelfSupplySystem.Utils;
 using UnityEngine;
 
-namespace PackagerExtension.DealerExtension
+namespace DealerSelfSupplySystem.DealerExtension
 {
     public class DealerExtendedBrain
     {

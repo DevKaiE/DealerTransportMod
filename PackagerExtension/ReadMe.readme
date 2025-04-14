@@ -1,0 +1,60 @@
+# Dealer Auto-Resupply System
+
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![MelonLoader](https://img.shields.io/badge/MelonLoader-0.7+-green.svg)
+
+A MelonLoader mod for Schedule I that automates inventory management for dealers. When dealers run low on product, they'll automatically travel to their assigned storage, collect suitable items, and return to their position.
+
+## Features
+
+- **Storage Assignment System**: Assign dealers to specific storage locations through an intuitive UI
+- **Automated Inventory Monitoring**: Dealers automatically track their inventory levels and restock when below 40% capacity
+- **Smart Collection Logic**: Dealers only collect items they can actually sell
+- **Realistic Travel Simulation**: Travel time based on distance between dealer and storage location
+- **Dealer Notifications**: Receive text messages from dealers when they collect items or find empty storage
+- **Balanced Gameplay**: Each dealer can only be assigned to one storage to maintain game balance
+
+## Installation
+
+1. Make sure you have [MelonLoader](https://github.com/LavaGang/MelonLoader) installed (version 0.7 or higher)
+2. Download the latest release of Dealer Auto-Resupply System from the [Releases](https://github.com/KaiNoodles/DealerAutoResupply/releases) page
+3. Place the `DealerAutoResupply.dll` file in your Schedule I game folder under `\Mods\`
+4. Launch the game with MelonLoader
+
+## How to Use
+
+### Assigning a Dealer to Storage
+
+1. Open any storage container in the game
+2. Look for the new panel on the right side of the storage menu
+3. Click on "No Dealer" or the currently assigned dealer's name
+4. Select a dealer from the popup menu
+5. The dealer will now be associated with this storage location
+
+### Removing a Dealer Assignment
+
+1. Open the storage container
+2. Click the "Clear" button in the dealer assignment panel
+
+### How It Works
+
+- Dealers periodically check their inventory (every 30 seconds by default)
+- If a dealer's inventory falls below 40% capacity, they'll begin the collection process
+- The dealer will "travel" to the storage location (simulated based on distance)
+- Once there, they'll collect items they can sell (up to 75% of their empty slots)
+- After collection, they'll "travel" back to their position
+- You'll receive a text message from the dealer informing you of their success or failure
+
+## Planned Features
+
+- Configuration options to adjust collection thresholds and intervals
+- Option to enable/disable dealer text messages
+- Priority system for dealers to favor certain products
+
+## Credits
+
+- Developed by KaiNoodles
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

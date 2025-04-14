@@ -1,4 +1,4 @@
-﻿namespace PackagerExtension.Utils
+﻿namespace DealerSelfSupplySystem.Utils
 {
     public static class Messages
     {
