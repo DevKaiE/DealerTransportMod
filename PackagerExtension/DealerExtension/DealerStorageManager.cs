@@ -34,7 +34,8 @@ namespace DealerSelfSupplySystem.DealerExtension
     }
     public class DealerStorageManager
     {
-        internal Dictionary<StorageEntity, DealerExtendedBrain> _dealerStorageDictionary;
+        // Modified to support multiple dealers per storage
+        internal Dictionary<StorageEntity, List<DealerExtendedBrain>> _dealerStorageDictionary;
         internal Dictionary<StorageEntity, DealerExtensionUI> _dealerStorageUIDictionary;
         private Dictionary<StorageMenu, StorageEntity> _storageMenuStorageEntityDictionary;
         private List<DealerExtendedBrain> _dealerExtendedBrainList;
@@ -44,9 +45,10 @@ namespace DealerSelfSupplySystem.DealerExtension
         private float _lastCheckTime = 0f;
         private bool _isEnabled = true;
         private readonly string saveFileName = "dealer_storage_data.json";
+
         public DealerStorageManager()
         {
-            _dealerStorageDictionary = new Dictionary<StorageEntity, DealerExtendedBrain>();
+            _dealerStorageDictionary = new Dictionary<StorageEntity, List<DealerExtendedBrain>>();
             _dealerStorageUIDictionary = new Dictionary<StorageEntity, DealerExtensionUI>();
             _storageMenuStorageEntityDictionary = new Dictionary<StorageMenu, StorageEntity>();
             _dealerExtendedBrainList = new List<DealerExtendedBrain>();
@@ -54,94 +56,101 @@ namespace DealerSelfSupplySystem.DealerExtension
 
         public bool IsDealerAssignedToAnyStorage(DealerExtendedBrain dealer)
         {
-            return _dealerStorageDictionary.Values.Any(d => d == dealer);
+            return _dealerStorageDictionary.Any(kvp => kvp.Value.Contains(dealer));
         }
 
-        public StorageEntity GetAssignedStorageForDealer(DealerExtendedBrain dealer)
+        public List<StorageEntity> GetAssignedStoragesForDealer(DealerExtendedBrain dealer)
         {
-            return _dealerStorageDictionary.FirstOrDefault(kvp => kvp.Value == dealer).Key;
+            return _dealerStorageDictionary
+                .Where(kvp => kvp.Value.Contains(dealer))
+                .Select(kvp => kvp.Key)
+                .ToList();
         }
 
         public bool SetDealerToStorage(StorageEntity storageEntity, DealerExtendedBrain dealer)
         {
-            // If the config allows multiple dealers per storage, we don't need to check
-            // if dealer is already assigned elsewhere
+            // Check if multiple dealers per storage is allowed
             bool allowMultipleDealers = Config.multipleDealersPerStorage.Value;
+            int maxDealersPerStorage = Config.maxDealersPerStorage.Value;
 
-            // Check if this dealer is already assigned to another storage
-            StorageEntity existingStorage = GetAssignedStorageForDealer(dealer);
-
-            // If dealer is already assigned to another storage and multiple assignments aren't allowed, don't proceed
-            if (!allowMultipleDealers && existingStorage != null && existingStorage != storageEntity)
+            // Initialize the list if this storage doesn't have one yet
+            if (!_dealerStorageDictionary.ContainsKey(storageEntity))
             {
-                Core.MelonLogger.Msg($"Dealer {dealer.Dealer.fullName} is already assigned to {existingStorage.name}");
+                _dealerStorageDictionary[storageEntity] = new List<DealerExtendedBrain>();
+            }
+
+            // Check if this dealer is already assigned to this storage
+            if (_dealerStorageDictionary[storageEntity].Contains(dealer))
+            {
+                Core.MelonLogger.Msg($"Dealer {dealer.Dealer.fullName} is already assigned to {storageEntity.name}");
                 return false;
             }
 
-            // If multiple dealers are allowed, we can assign a dealer to multiple storages
-            // If multiple dealers per storage are allowed, we can add new entries
-            if (allowMultipleDealers)
+            // If multiple dealers are not allowed, clear the current list
+            if (!allowMultipleDealers)
             {
-                // Add a new entry if it doesn't exist yet
-                if (!_dealerStorageDictionary.ContainsKey(storageEntity) ||
-                    _dealerStorageDictionary[storageEntity] == null)
+                if (_dealerStorageDictionary[storageEntity].Count > 0)
                 {
-                    _dealerStorageDictionary[storageEntity] = dealer;
-                }
-                else
-                {
-                    // We could create a new data structure to handle multiple dealers per storage
-                    // For now, just replace the existing dealer
-                    _dealerStorageDictionary[storageEntity] = dealer;
-                    Core.MelonLogger.Msg($"Replacing dealer {_dealerStorageDictionary[storageEntity].Dealer.fullName} with {dealer.Dealer.fullName} for storage {storageEntity.name}");
+                    Core.MelonLogger.Msg($"Replacing dealer(s) with {dealer.Dealer.fullName} for storage {storageEntity.name}");
+                    _dealerStorageDictionary[storageEntity].Clear();
                 }
             }
             else
             {
-                // Original behavior - replace any existing dealer
-                if (_dealerStorageDictionary.ContainsKey(storageEntity) &&
-                    _dealerStorageDictionary[storageEntity] != null &&
-                    _dealerStorageDictionary[storageEntity] != dealer)
+                // Check if we've reached the maximum number of dealers for this storage
+                if (_dealerStorageDictionary[storageEntity].Count >= maxDealersPerStorage)
                 {
-                    Core.MelonLogger.Msg($"Replacing dealer {_dealerStorageDictionary[storageEntity].Dealer.fullName} with {dealer.Dealer.fullName} for storage {storageEntity.name}");
-                }
-
-                // Update or add the assignment
-                if (!_dealerStorageDictionary.ContainsKey(storageEntity))
-                {
-                    _dealerStorageDictionary.Add(storageEntity, dealer);
-                }
-                else
-                {
-                    _dealerStorageDictionary[storageEntity] = dealer;
+                    Core.MelonLogger.Msg($"Storage {storageEntity.name} already has the maximum number of dealers ({maxDealersPerStorage})");
+                    dealer.Dealer.SendTextMessage($"This storage is already at capacity with {maxDealersPerStorage} dealers. Use a different storage or increase the limit in config.");
+                    return false;
                 }
             }
+
+            // Add the dealer to the storage
+            _dealerStorageDictionary[storageEntity].Add(dealer);
+            Core.MelonLogger.Msg($"Added dealer {dealer.Dealer.fullName} to storage {storageEntity.name}");
 
             return true;
         }
 
-        public void RemoveDealerFromStorage(StorageEntity storageEntity)
+        public void RemoveDealerFromStorage(StorageEntity storageEntity, DealerExtendedBrain dealer = null)
         {
-            if (_dealerStorageDictionary.ContainsKey(storageEntity))
+            if (!_dealerStorageDictionary.ContainsKey(storageEntity))
+                return;
+
+            if (dealer == null)
             {
-                _dealerStorageDictionary[storageEntity] = null;
+                // Remove all dealers from this storage
+                _dealerStorageDictionary[storageEntity].Clear();
+                Core.MelonLogger.Msg($"Cleared all dealers from storage {storageEntity.name}");
+            }
+            else
+            {
+                // Remove specific dealer
+                if (_dealerStorageDictionary[storageEntity].Contains(dealer))
+                {
+                    _dealerStorageDictionary[storageEntity].Remove(dealer);
+                    Core.MelonLogger.Msg($"Removed dealer {dealer.Dealer.fullName} from storage {storageEntity.name}");
+                }
             }
         }
 
-        public StorageEntity GetStorageFromDealer(DealerExtendedBrain dealer)
-        {
-            if (_dealerStorageDictionary.ContainsValue(dealer))
-            {
-                return _dealerStorageDictionary.FirstOrDefault(x => x.Value == dealer).Key;
-            }
-            return null;
-        }
-
-        public DealerExtendedBrain GetDealerFromStorage(StorageEntity storageEntity)
+        public List<DealerExtendedBrain> GetDealersFromStorage(StorageEntity storageEntity)
         {
             if (_dealerStorageDictionary.ContainsKey(storageEntity))
             {
                 return _dealerStorageDictionary[storageEntity];
+            }
+            return new List<DealerExtendedBrain>();
+        }
+
+        // For backward compatibility, get the first dealer
+        public DealerExtendedBrain GetDealerFromStorage(StorageEntity storageEntity)
+        {
+            if (_dealerStorageDictionary.ContainsKey(storageEntity) &&
+                _dealerStorageDictionary[storageEntity].Count > 0)
+            {
+                return _dealerStorageDictionary[storageEntity][0];
             }
             return null;
         }
@@ -207,29 +216,36 @@ namespace DealerSelfSupplySystem.DealerExtension
 
             _lastCheckTime = Time.time;
 
-            // Use a separate list to avoid modification during iteration
-            List<KeyValuePair<StorageEntity, DealerExtendedBrain>> validPairs =
-                _dealerStorageDictionary.Where(kvp => kvp.Key != null && kvp.Value != null).ToList();
+            // Process all valid storage-dealer pairs
+            int totalAssignmentsChecked = 0;
 
-            Core.MelonLogger.Msg($"Checking {validPairs.Count} dealer-storage assignments");
-
-            foreach (var kvp in validPairs)
+            foreach (var kvp in _dealerStorageDictionary)
             {
-                DealerExtendedBrain dealerEx = kvp.Value;
                 StorageEntity storageEntity = kvp.Key;
+                List<DealerExtendedBrain> dealers = kvp.Value;
 
-                // Check if objects are still valid
-                if (dealerEx.Dealer == null || storageEntity == null)
-                {
-                    Core.MelonLogger.Warning($"Found invalid dealer or storage reference, cleaning up");
-                    // Clean up invalid entries
-                    _dealerStorageDictionary.Remove(kvp.Key);
+                // Skip invalid storage
+                if (storageEntity == null)
                     continue;
-                }
 
-                // Try to have the dealer collect items
-                dealerEx.TryCollectItemsFromStorage(storageEntity);
+                // Process each dealer assigned to this storage
+                foreach (var dealerEx in dealers.ToList()) // Use ToList to avoid modification during iteration
+                {
+                    // Check if dealer is still valid
+                    if (dealerEx?.Dealer == null)
+                    {
+                        Core.MelonLogger.Warning($"Found invalid dealer reference, removing from storage {storageEntity.name}");
+                        dealers.Remove(dealerEx);
+                        continue;
+                    }
+
+                    // Try to have the dealer collect items
+                    dealerEx.TryCollectItemsFromStorage(storageEntity);
+                    totalAssignmentsChecked++;
+                }
             }
+
+            Core.MelonLogger.Msg($"Checked {totalAssignmentsChecked} dealer-storage assignments");
         }
 
         // New methods for configuration
@@ -252,18 +268,21 @@ namespace DealerSelfSupplySystem.DealerExtension
         public string GetCollectionStats()
         {
             int totalDealers = _dealerExtendedBrainList.Count;
-            int assignedDealers = _dealerStorageDictionary.Values.Count(d => d != null);
+            int assignedDealers = _dealerStorageDictionary.Values.SelectMany(list => list).Distinct().Count();
             int totalItemsCollected = _dealerExtendedBrainList.Sum(d => d.TotalItemsCollected);
+            int totalAssignments = _dealerStorageDictionary.Values.Sum(list => list.Count);
 
             return $"Assigned Dealers: {assignedDealers}/{totalDealers}\n" +
+                   $"Total Assignments: {totalAssignments}\n" +
                    $"Total Items Collected: {totalItemsCollected}";
-
         }
 
-        public IEnumerable<KeyValuePair<StorageEntity, DealerExtendedBrain>> GetAllAssignmentPairs()
+        public Dictionary<StorageEntity, List<DealerExtendedBrain>> GetAllAssignments()
         {
-            return _dealerStorageDictionary.Where(kvp => kvp.Key != null && kvp.Value != null);
+            return _dealerStorageDictionary.Where(kvp => kvp.Key != null && kvp.Value.Count > 0)
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
+
         public System.Collections.IEnumerator RestoreDealerAssignments(List<DealerStorageAssignment> assignments)
         {
             // Wait a moment for game to fully initialize
@@ -355,6 +374,7 @@ namespace DealerSelfSupplySystem.DealerExtension
             _dealerStorageUIDictionary.Clear();
             _storageMenuStorageEntityDictionary.Clear();
             _dealerExtendedBrainList.Clear();
+
             // Optionally, you can also destroy the UI objects if needed
             foreach (var ui in _dealerStorageUIDictionary.Values)
             {
@@ -362,7 +382,5 @@ namespace DealerSelfSupplySystem.DealerExtension
             }
             _dealerStorageUIDictionary.Clear();
         }
-
-
     }
 }

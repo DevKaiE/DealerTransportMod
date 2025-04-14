@@ -8,7 +8,7 @@ using UnityEngine;
 using Il2CppScheduleOne.Persistence;
 using DealerSelfSupplySystem.Persistence;
 
-[assembly: MelonInfo(typeof(DealerSelfSupplySystem.Core), "DealerSelfSupplySystem", "1.1.0", "KaiNoodles", null)]
+[assembly: MelonInfo(typeof(DealerSelfSupplySystem.Core), "DealerSelfSupplySystem", "1.1.0", "KaikiNoodles", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 namespace DealerSelfSupplySystem
@@ -29,7 +29,22 @@ namespace DealerSelfSupplySystem
             MelonLogger.Msg("DealerSelfSupplySystem initializing...");
             Config = new Config();
             DealerStorageManager = new DealerStorageManager();
+
+            // Apply configuration settings to DealerStorageManager
+            ApplyConfigToDealerStorageManager();
+
             MelonLogger.Msg("Initialization complete.");
+        }
+
+        private void ApplyConfigToDealerStorageManager()
+        {
+            // Set the check interval from config
+            if (DealerStorageManager != null && Config.dealerStorageCheckInterval != null)
+            {
+                float checkInterval = Mathf.Clamp(Config.dealerStorageCheckInterval.Value, 10f, 300f);
+                DealerStorageManager.SetCheckInterval(checkInterval);
+                MelonLogger.Msg($"Set dealer storage check interval to {checkInterval} seconds");
+            }
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -100,32 +115,11 @@ namespace DealerSelfSupplySystem
             }
         }
 
-        public void InitializeExtendedDealers()
-        {
-            List<Dealer> dealers = GameUtils.GetAllDealers();
-
-            if (dealers.Count > 0)
-            {
-                foreach (Dealer dealer in dealers)
-                {
-                    if (dealer == null) continue;
-                    DealerExtendedBrain dealerExtendedBrain = new DealerExtendedBrain(dealer);
-                    DealerStorageManager.AddDealerExtendedBrain(dealerExtendedBrain);
-                }
-
-                MelonLogger.Msg($"Successfully initialized {dealers.Count} dealers");
-                dealersInitialized = true;
-            }
-            else
-            {
-                MelonLogger.Warning("No dealers found during initialization");
-            }
-        }
-
         public override void OnUpdate()
         {
             if (Input.GetKeyDown(KeyCode.F9))
             {
+                // Debug shortcut for saving
                 SavePoint.SAVE_COOLDOWN = 0f;
             }
 
@@ -142,6 +136,13 @@ namespace DealerSelfSupplySystem
                     }
                 }
             }
+        }
+
+        public override void OnPreferencesSaved()
+        {
+            // Apply any updated settings when preferences are saved
+            ApplyConfigToDealerStorageManager();
+            MelonLogger.Msg("Configuration updated");
         }
     }
 }

@@ -49,25 +49,30 @@ namespace DealerSelfSupplySystem.Persistence
 
                 List<DealerStorageAssignment> assignments = new List<DealerStorageAssignment>();
 
-                foreach (var pair in Core.DealerStorageManager._dealerStorageDictionary)
+                var allAssignments = Core.DealerStorageManager.GetAllAssignments();
+
+                foreach (var pair in allAssignments)
                 {
-                    if (pair.Key != null && pair.Value != null)
+                    if (pair.Key != null)
                     {
                         var storage = pair.Key;
-                        var dealer = pair.Value;
 
-                        if (storage != null && dealer?.Dealer != null)
+                        // Process each dealer assigned to this storage
+                        foreach (var dealerBrain in pair.Value)
                         {
-                            var assignment = new DealerStorageAssignment
+                            if (dealerBrain?.Dealer != null)
                             {
-                                StorageName = storage.name,
-                                StorageEntityPosition = storage.transform.position,
-                                DealerName = dealer.Dealer.name,
-                                DealerFullName = dealer.Dealer.fullName
-                            };
+                                var assignment = new DealerStorageAssignment
+                                {
+                                    StorageName = storage.name,
+                                    StorageEntityPosition = storage.transform.position,
+                                    DealerName = dealerBrain.Dealer.name,
+                                    DealerFullName = dealerBrain.Dealer.fullName
+                                };
 
-                            Core.MelonLogger.Msg($"Saving assignment: {dealer.Dealer.fullName} -> Storage '{storage.name}' at {storage.transform.position}");
-                            assignments.Add(assignment);
+                                Core.MelonLogger.Msg($"Saving assignment: {dealerBrain.Dealer.fullName} -> Storage '{storage.name}' at {storage.transform.position}");
+                                assignments.Add(assignment);
+                            }
                         }
                     }
                 }
@@ -257,8 +262,9 @@ namespace DealerSelfSupplySystem.Persistence
             if (brain == null)
                 return false;
 
-            StorageEntity assignedStorage = Core.DealerStorageManager.GetAssignedStorageForDealer(brain);
-            return assignedStorage == storage;
+            // Get all dealers for this storage
+            List<DealerExtendedBrain> assignedDealers = Core.DealerStorageManager.GetDealersFromStorage(storage);
+            return assignedDealers.Contains(brain);
         }
 
         private static Dealer FindMatchingDealer(List<Dealer> dealers, DealerStorageAssignment assignment)
@@ -372,12 +378,10 @@ namespace DealerSelfSupplySystem.Persistence
                 return fallbackFolder;
             }
         }
-
         private static string GetModSaveFolder(string gameSaveFolderPath)
         {
             string saveRootFolder = Path.GetDirectoryName(gameSaveFolderPath);
-            string modSavesFolder = Path.Combine(saveRootFolder, MOD_FOLDER_NAME);
-            return modSavesFolder;
+            return Path.Combine(saveRootFolder, MOD_FOLDER_NAME);
         }
     }
 }

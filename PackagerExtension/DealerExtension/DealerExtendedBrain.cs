@@ -15,12 +15,13 @@ namespace DealerSelfSupplySystem.DealerExtension
         public bool IsProcessingItems { get; private set; } = false;
         private float lastInventoryCheckTime = 0f;
         private const float INVENTORY_CHECK_INTERVAL = 30f; // Check inventory every 30 seconds
-        private float INVENTORY_THRESHOLD; // Consider dealer needs items if less than 40% of slots filled
+        private float INVENTORY_THRESHOLD; // Consider dealer needs items if less than X% of slots filled
         private bool _canBeInturrupted = false; // Set to true if you want to allow interruption of item collection by contracts
 
         // Stats tracking
         public int TotalItemsCollected { get; private set; } = 0;
         public DateTime LastCollectionTime { get; private set; }
+        public string LastProcessedStorageName { get; private set; } = "None";
 
         public DealerExtendedBrain(Dealer dealer)
         {
@@ -75,17 +76,16 @@ namespace DealerSelfSupplySystem.DealerExtension
 
             // Don't collect if the dealer is in a contract or doesn't need items
             if (Dealer.currentContract != null)
-            {  
+            {
                 Core.MelonLogger.Msg($"Dealer {Dealer.fullName} is busy with a contract, cannot collect items");
-                return false; 
+                return false;
             }
-      
 
             if (!CalculateNeedsItems())
                 return false;
 
             if (IsProcessingItems)
-            { 
+            {
                 Core.MelonLogger.Msg($"Dealer {Dealer.fullName} is already processing items, cannot collect again");
                 return false;
             }
@@ -98,21 +98,51 @@ namespace DealerSelfSupplySystem.DealerExtension
             }
 
             // Start collecting process with a delay to simulate travel time
-            IsProcessingItems = true;            
+            IsProcessingItems = true;
             MelonCoroutines.Start(SimulateItemCollection(storageEntity));
             return true;
         }
 
         private bool HasValidItemsForDealer(StorageEntity storageEntity)
         {
+            // Get all items in storage
             List<ItemInstance> items = storageEntity.GetAllItems().ToArray().ToList();
-            List<ProductDefinition> orderableProducts = Dealer.GetOrderableProducts().ToArray().ToList();
 
-            return items.Any(item =>
+            // Debug logging to investigate what's available
+            Core.MelonLogger.Msg($"Dealer {Dealer.fullName} checking storage {storageEntity.name}:");
+            Core.MelonLogger.Msg($"- Storage has {items.Count} total items");
+
+            // Only check if items are products and not unpackaged
+            bool hasValidItems = items.Any(item =>
                 item != null &&
                 item.Category == EItemCategory.Product &&
-                !item.Name.Contains("Unpackaged") &&
-                orderableProducts.Any(p => p.ID == item.ID));
+                !item.Name.Contains("Unpackaged"));
+
+            if (hasValidItems)
+            {
+                // Count how many valid items were found
+                int validItemCount = items.Count(item =>
+                    item != null &&
+                    item.Category == EItemCategory.Product &&
+                    !item.Name.Contains("Unpackaged"));
+
+                Core.MelonLogger.Msg($"- Found {validItemCount} valid items in storage");
+                return true;
+            }
+
+            // Debug: Log the first few items in storage for debugging
+            if (items.Count > 0)
+            {
+                Core.MelonLogger.Msg("Storage contains:");
+                foreach (var item in items.Take(5))
+                {
+                    if (item != null)
+                        Core.MelonLogger.Msg($"  - {item.Name} (Type: {item.GetType()}, Category: {item.Category})");
+                }
+            }
+
+            Core.MelonLogger.Msg($"- No valid items found for dealer {Dealer.fullName}");
+            return false;
         }
 
         private float CalculateTravelTime(StorageEntity storageEntity)
@@ -140,6 +170,8 @@ namespace DealerSelfSupplySystem.DealerExtension
 
         private System.Collections.IEnumerator SimulateItemCollection(StorageEntity storageEntity)
         {
+            // Store the name of the storage being processed
+            LastProcessedStorageName = storageEntity.name;
 
             float travelTime = CalculateTravelTime(storageEntity);
 
@@ -185,7 +217,6 @@ namespace DealerSelfSupplySystem.DealerExtension
             finally
             {
                 IsProcessingItems = false;
-               
             }
         }
 
@@ -193,14 +224,14 @@ namespace DealerSelfSupplySystem.DealerExtension
         {
             if (storageEntity == null) return 0;
 
-            // Get what products this dealer can sell
-            List<ProductDefinition> orderableProducts = Dealer.GetOrderableProducts().ToArray().ToList();
             List<ItemInstance> items = storageEntity.GetAllItems().ToArray().ToList();
             int itemsTransferred = 0;
             int maxItemsToTake = CalculateMaxItemsToTake();
 
-            // First prioritize items that the dealer can actually sell
-            foreach (ItemInstance item in items)
+            Core.MelonLogger.Msg($"Dealer {Dealer.fullName} attempting to collect up to {maxItemsToTake} items");
+
+            // Simply collect any product that's not unpackaged
+            foreach (ItemInstance item in items.ToList()) // Use ToList to avoid modification during iteration
             {
                 if (itemsTransferred >= maxItemsToTake)
                     break;
@@ -211,13 +242,9 @@ namespace DealerSelfSupplySystem.DealerExtension
                 if (item.Name.Contains("Unpackaged")) continue;
                 if (item.Category != EItemCategory.Product) continue;
 
-                // Check if the dealer can sell this product
-                if (orderableProducts.Any(p => p.ID == item.ID))
-                {
-                    // Add to dealer inventory
-                    Dealer.AddItemToInventory(item);
-                    itemsTransferred++;
-                }
+                // Add to dealer inventory without checking orderableProducts
+                Dealer.AddItemToInventory(item);
+                itemsTransferred++;
             }
 
             return itemsTransferred;
@@ -229,9 +256,20 @@ namespace DealerSelfSupplySystem.DealerExtension
             List<ItemSlot> slots = Dealer.GetAllSlots().ToArray().ToList();
             int emptySlots = slots.Count(slot => slot.Quantity == 0);
 
-            // Take at most 75% of available empty slots to prevent 
-            // dealers from emptying storage completely
-            return Mathf.Max(1, Mathf.FloorToInt(emptySlots * 0.75f));
+            // Consider how many other dealers might be assigned to the same storage
+            float takePercentage = 0.75f; // Default take percentage for single dealer
+
+            // If multiple dealers per storage is enabled, use the configurable share rate
+            if (Config.multipleDealersPerStorage.Value)
+            {
+                takePercentage = Config.dealerCollectionShareRate.Value;
+
+                // Ensure the share rate is within reasonable bounds
+                takePercentage = Mathf.Clamp(takePercentage, 0.1f, 1.0f);
+            }
+
+            // Take at most N% of available empty slots
+            return Mathf.Max(1, Mathf.FloorToInt(emptySlots * takePercentage));
         }
     }
 }
