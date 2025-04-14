@@ -1,7 +1,7 @@
 ﻿using HarmonyLib;
 using Il2CppScheduleOne.Persistence;
 using Il2CppScheduleOne.Persistence.Datas;
-using DealerSelfSupplySystem;
+using DealerSelfSupplySystem.Persistence;
 
 namespace DealerSelfSupplySystem.Patches
 {
@@ -10,8 +10,8 @@ namespace DealerSelfSupplySystem.Patches
     {
         public static void Postfix(SaveManager __instance, string saveFolderPath)
         {
-            Core.DealerStorageManager.SaveDealerStorageData(saveFolderPath);
-            Core.MelonLogger.Msg($"Saved dealer storage data to {saveFolderPath}");
+            DealerSaveDataManager.SaveData(saveFolderPath);
+            Core.MelonLogger.Msg($"Saved dealer storage data for save at {saveFolderPath}");
         }
     }
 
@@ -20,7 +20,7 @@ namespace DealerSelfSupplySystem.Patches
     {
         public static void Postfix(LoadManager __instance, SaveInfo info, bool allowLoadStacking)
         {
-            Core.DealerStorageManager.LoadDealerStorageData(info.SavePath);
+            DealerSaveDataManager.LoadData(info.SavePath);
             Core.MelonLogger.Msg($"Loaded dealer storage data from {info.SavePath}");
         }
     }

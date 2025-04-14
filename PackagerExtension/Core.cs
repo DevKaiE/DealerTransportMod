@@ -6,6 +6,9 @@ using MelonLoader;
 using DealerSelfSupplySystem;
 using DealerSelfSupplySystem.DealerExtension;
 using UnityEngine;
+using Il2CppScheduleOne.Persistence;
+using DealerSelfSupplySystem.Persistence;
+using Il2CppInterop.Runtime.Injection;
 
 [assembly: MelonInfo(typeof(DealerSelfSupplySystem.Core), "DealerSelfSupplySystem", "1.0.0", "KaiNoodles", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
@@ -25,7 +28,6 @@ namespace DealerSelfSupplySystem
             MelonLogger.Msg("Initialization.");
             Config = new Config();
             DealerStorageManager = new DealerStorageManager();
-            
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -35,6 +37,7 @@ namespace DealerSelfSupplySystem
                 MainSceneLoaded = true;
                 MelonLogger.Msg("Main scene loaded.");
                 InitializeExtendedDealers();
+                //SavePoint.SAVE_COOLDOWN = 0f;
             }
         }
 
@@ -61,6 +64,14 @@ namespace DealerSelfSupplySystem
                 if (dealer == null) continue;
                 DealerExtendedBrain dealerExtendedBrain = new DealerExtendedBrain(dealer);
                 DealerStorageManager.AddDealerExtendedBrain(dealerExtendedBrain);
+            }
+        }
+
+        public override void OnUpdate()
+        {
+            if (Input.GetKeyDown(KeyCode.F9))
+            {
+                SavePoint.SAVE_COOLDOWN = 0f;
             }
         }
     }

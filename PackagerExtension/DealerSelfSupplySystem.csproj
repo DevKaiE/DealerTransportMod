@@ -469,6 +469,7 @@
 		<Compile Include="Patches\DealerPatches.cs" />
 		<Compile Include="Patches\SavePatch.cs" />
 		<Compile Include="Patches\StorageEntityOpened.cs" />
+		<Compile Include="Persistence\DealerSavesDataManager.cs" />
 		<Compile Include="UI\FlexiblePopup.cs" />
 		<Compile Include="Utils\GameUtils.cs" />
 		<Compile Include="Utils\Messages.cs" />

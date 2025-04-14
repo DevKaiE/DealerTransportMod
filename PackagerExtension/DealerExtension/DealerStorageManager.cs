@@ -13,12 +13,28 @@ namespace DealerSelfSupplySystem.DealerExtension
     [Serializable]
     public class DealerStorageAssignment
     {
-        public string StorageEntityName { get; set; }
+        // These separate properties will be used for serialization
+        public float PosX { get; set; }
+        public float PosY { get; set; }
+        public float PosZ { get; set; }
         public string DealerName { get; set; }
+
+        // This property is for convenience in code but won't be serialized directly
+        [System.Text.Json.Serialization.JsonIgnore]
+        public Vector3 StorageEntityPosition
+        {
+            get { return new Vector3(PosX, PosY, PosZ); }
+            set
+            {
+                PosX = value.x;
+                PosY = value.y;
+                PosZ = value.z;
+            }
+        }
     }
     public class DealerStorageManager
     {
-        private Dictionary<StorageEntity, DealerExtendedBrain> _dealerStorageDictionary;
+        internal Dictionary<StorageEntity, DealerExtendedBrain> _dealerStorageDictionary;
         private Dictionary<StorageEntity, DealerExtensionUI> _dealerStorageUIDictionary;
         private Dictionary<StorageMenu, StorageEntity> _storageMenuStorageEntityDictionary;
         private List<DealerExtendedBrain> _dealerExtendedBrainList;
@@ -219,82 +235,17 @@ namespace DealerSelfSupplySystem.DealerExtension
 
         }
 
-        public void SaveDealerStorageData(string saveFolderPath)
+        public IEnumerable<KeyValuePair<StorageEntity, DealerExtendedBrain>> GetAllAssignmentPairs()
         {
-            try
-            {
-                // Create a list to store the assignments
-                List<DealerStorageAssignment> assignments = new List<DealerStorageAssignment>();
-
-                // Get valid dealer-storage pairs
-                foreach (var pair in _dealerStorageDictionary.Where(kvp => kvp.Key != null && kvp.Value != null))
-                {
-                    StorageEntity storage = pair.Key;
-                    DealerExtendedBrain dealer = pair.Value;
-
-                    if (storage != null && dealer?.Dealer != null)
-                    {
-                        assignments.Add(new DealerStorageAssignment
-                        {
-                            StorageEntityName = storage.name,
-                            DealerName = dealer.Dealer.fullName
-                        });
-                    }
-                }
-
-                // Serialize to JSON
-                Il2CppSystem.Object il2CppAssignments = (Il2CppSystem.Object)(object)assignments; // Explicit cast to Il2CppSystem.Object
-                string json = JsonConvert.SerializeObject(il2CppAssignments, Formatting.Indented);
-                string fullPath = Path.Combine(saveFolderPath, saveFileName);
-
-                // Write to file
-                File.WriteAllText(fullPath, json);
-                Core.MelonLogger.Msg($"Successfully saved dealer storage assignments to {fullPath}");
-            }
-            catch (Exception ex)
-            {
-                Core.MelonLogger.Error($"Failed to save dealer storage assignments: {ex.Message}");
-            }
+            return _dealerStorageDictionary.Where(kvp => kvp.Key != null && kvp.Value != null);
         }
-
-        public void LoadDealerStorageData(string saveFolderPath)
-        {
-            string fullPath = Path.Combine(saveFolderPath, saveFileName);
-
-            if (!File.Exists(fullPath))
-            {
-                Core.MelonLogger.Msg($"No dealer storage assignments file found at {fullPath}");
-                return;
-            }
-
-            try
-            {
-                // Read from file
-                string json = File.ReadAllText(fullPath);
-                List<DealerStorageAssignment> assignments = JsonConvert.DeserializeObject<List<DealerStorageAssignment>>(json);
-
-                if (assignments == null || assignments.Count == 0)
-                {
-                    Core.MelonLogger.Warning("Dealer storage data file was invalid or empty");
-                    return;
-                }
-
-                Core.MelonLogger.Msg($"Loading {assignments.Count} dealer storage assignments");
-
-                // We need to wait until all dealers and storage entities are loaded in the game
-                // before we can restore assignments, so we'll set up a delayed restore
-                MelonCoroutines.Start(RestoreDealerAssignments(assignments));
-            }
-            catch (Exception ex)
-            {
-                Core.MelonLogger.Error($"Failed to load dealer storage assignments: {ex.Message}");
-            }
-        }
-
-        private System.Collections.IEnumerator RestoreDealerAssignments(List<DealerStorageAssignment> assignments)
+        public System.Collections.IEnumerator RestoreDealerAssignments(List<DealerStorageAssignment> assignments)
         {
             // Wait a moment for game to fully initialize
             yield return new WaitForSeconds(2f);
+
+            // Wait a bit longer for entities to settle
+            yield return new WaitForSeconds(3f);
 
             int restoredCount = 0;
 
@@ -302,25 +253,67 @@ namespace DealerSelfSupplySystem.DealerExtension
             List<Dealer> allDealers = GameUtils.GetRecruitedDealers();
             List<StorageEntity> allStorages = FindAllStorageEntities();
 
+            Core.MelonLogger.Msg($"Found {allDealers.Count} dealers and {allStorages.Count} storage entities");
+
+            // Log storage positions for debugging
+            foreach (var storage in allStorages)
+            {
+                Core.MelonLogger.Msg($"Storage: {storage.name}, Position: {storage.transform.position}");
+            }
+
             foreach (var assignment in assignments)
             {
-                // Find matching dealer and storage
+                Core.MelonLogger.Msg($"Trying to restore assignment: StoragePos={assignment.StorageEntityPosition}, DealerName={assignment.DealerName}");
+
+                // Find matching dealer
                 Dealer matchedDealer = allDealers.FirstOrDefault(d => d.fullName == assignment.DealerName);
-                StorageEntity matchedStorage = allStorages.FirstOrDefault(s => s.name == assignment.StorageEntityName);
-
-                if (matchedDealer != null && matchedStorage != null)
+                if (matchedDealer == null)
                 {
-                    // Find or create dealer brain
-                    DealerExtendedBrain dealerBrain = _dealerExtendedBrainList.FirstOrDefault(d => d.Dealer == matchedDealer);
-                    if (dealerBrain == null)
-                    {
-                        dealerBrain = new DealerExtendedBrain(matchedDealer);
-                        AddDealerExtendedBrain(dealerBrain);
-                    }
+                    Core.MelonLogger.Warning($"Could not find dealer with name: {assignment.DealerName}");
+                    continue;
+                }
 
-                    // Restore assignment
-                    SetDealerToStorage(matchedStorage, dealerBrain);
+                // Find closest storage entity to the saved position
+                StorageEntity matchedStorage = null;
+                float closestDistance = 1.0f; // Use a small tolerance (1 unit)
+
+                foreach (var storage in allStorages)
+                {
+                    float distance = Vector3.Distance(storage.transform.position, assignment.StorageEntityPosition);
+                    if (distance < closestDistance)
+                    {
+                        closestDistance = distance;
+                        matchedStorage = storage;
+                    }
+                }
+
+                if (matchedStorage == null)
+                {
+                    Core.MelonLogger.Warning($"Could not find storage near position: {assignment.StorageEntityPosition}");
+                    continue;
+                }
+
+                Core.MelonLogger.Msg($"Found matching storage at position {matchedStorage.transform.position}, distance: {closestDistance}");
+
+                // Find or create dealer brain
+                DealerExtendedBrain dealerBrain = _dealerExtendedBrainList.FirstOrDefault(d => d.Dealer == matchedDealer);
+                if (dealerBrain == null)
+                {
+                    dealerBrain = new DealerExtendedBrain(matchedDealer);
+                    AddDealerExtendedBrain(dealerBrain);
+                    Core.MelonLogger.Msg($"Created new DealerExtendedBrain for {matchedDealer.fullName}");
+                }
+
+                // Restore assignment
+                bool success = SetDealerToStorage(matchedStorage, dealerBrain);
+                if (success)
+                {
                     restoredCount++;
+                    Core.MelonLogger.Msg($"Successfully restored assignment: {matchedDealer.fullName} -> {matchedStorage.name}");
+                }
+                else
+                {
+                    Core.MelonLogger.Warning($"Failed to set dealer {matchedDealer.fullName} to storage {matchedStorage.name}");
                 }
             }
 
