@@ -5,10 +5,8 @@ namespace DealerSelfSupplySystem
 {
     public class Config
     {
-        // Define the category as static
         public static MelonPreferences_Category balanceCategory;
 
-        // Define the entries as static
         public static MelonPreferences_Entry<bool> multipleDealersPerStorage;
         public static MelonPreferences_Entry<bool> dealerStorageUIClosedByDefault;
         public static MelonPreferences_Entry<float> dealerInventoryThreshold;
@@ -21,10 +19,8 @@ namespace DealerSelfSupplySystem
 
         public Config()
         {
-            // Create the category if it doesn't exist
             balanceCategory = MelonPreferences.CreateCategory("DealerSelfSupplySystem");
 
-            // Create entries with descriptions
             multipleDealersPerStorage = balanceCategory.CreateEntry("MultipleDealersPerStorage", true,
                 description: "Allow multiple dealers to be assigned to the same storage.");
 
@@ -53,7 +49,6 @@ namespace DealerSelfSupplySystem
             uiPosition = balanceCategory.CreateEntry("UIPosition", new Vector2(1, 1),
                 description: "Position of the UI panel (X,Y in screen space, values from 0-1).");
 
-            // Save the preferences
             MelonPreferences.Save();
         }
     }

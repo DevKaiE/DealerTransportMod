@@ -1,11 +1,11 @@
-# Dealer Auto-Resupply System v1.2.0
+# Dealer Auto-Resupply System v1.1.0
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 ![MelonLoader](https://img.shields.io/badge/MelonLoader-0.7+-green.svg)
 
 A MelonLoader mod for Schedule I that automates inventory management for dealers. When dealers run low on product, they'll automatically travel to their assigned storage, collect suitable items, and return to their position.
 
-## New in v1.2.0: Multiple Dealers per Storage!
+## New in v1.1.0: Multiple Dealers per Storage!
 
 This update brings the highly requested feature of assigning multiple dealers to the same storage location. Now you can have a team of dealers all working from the same stash spot!
 

@@ -115,10 +115,10 @@ namespace DealerSelfSupplySystem.DealerExtension
 
             // Position the button in the top right corner but further to the edge
             RectTransform buttonRect = toggleButton.GetComponent<RectTransform>();
-            buttonRect.anchorMin = new Vector2(1, 1);
-            buttonRect.anchorMax = new Vector2(1, 1);
-            buttonRect.pivot = new Vector2(1, 1);
-            buttonRect.anchoredPosition = new Vector2(-10, -10); // Move more to the right edge
+            buttonRect.anchorMin = new Vector2(0.5f, 1);
+            buttonRect.anchorMax = new Vector2(0.5f, 1);
+            buttonRect.pivot = new Vector2(0.5f, 1);
+            buttonRect.anchoredPosition = new Vector2(0, -10); // Move more to the right edge
             buttonRect.sizeDelta = new Vector2(32, 32);
         }
 
@@ -131,9 +131,9 @@ namespace DealerSelfSupplySystem.DealerExtension
             panelImage.color = new Color(0.1f, 0.1f, 0.1f, 0.9f);
 
             RectTransform panelRect = MainPanel.GetComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(1, 1);
-            panelRect.anchorMax = new Vector2(1, 1);
-            panelRect.pivot = new Vector2(1, 1);
+            panelRect.anchorMin = new Vector2(0.5f, 1);
+            panelRect.anchorMax = new Vector2(0.5f, 1);
+            panelRect.pivot = new Vector2(0.5f, 1);
             panelRect.sizeDelta = new Vector2(220, 300); // Larger to accommodate the scroll view
             panelRect.anchoredPosition = new Vector2(-10, -50);
 
@@ -456,7 +456,7 @@ namespace DealerSelfSupplySystem.DealerExtension
             // Check if we can add more dealers to this storage
             bool allowMultipleDealers = Config.multipleDealersPerStorage.Value;
             int maxDealersPerStorage = Config.maxDealersPerStorage.Value;
-
+            Vector2 popupPosition = new Vector2(0.66f, 0.94f);
             // If we're at the max limit for dealers, show a message and return
             if (allowMultipleDealers && AssignedDealers.Count >= maxDealersPerStorage)
             {
@@ -465,7 +465,7 @@ namespace DealerSelfSupplySystem.DealerExtension
                     "Storage Full",
                     new[] { ("This storage already has the maximum number of dealers. You can increase the limit in the mod config.", "OK") },
                     _ => { },
-                    new Vector2(0.85f, 0.9f)
+                   popupPosition
                 );
                 yield break;
             }
@@ -482,9 +482,6 @@ namespace DealerSelfSupplySystem.DealerExtension
                 dealerOptions.Add(("No more dealers available", "None"));
 
             string dealerChoice = null;
-
-            // Position the popup slightly to the left of the main panel
-            Vector2 popupPosition = new Vector2(0.85f, 0.9f);
 
             yield return FlexiblePopup.ShowPopupAndWaitForResult(
                 "Choose Dealer",
