@@ -216,36 +216,49 @@ namespace DealerSelfSupplySystem.DealerExtension
 
             _lastCheckTime = Time.time;
 
-            // Process all valid storage-dealer pairs
-            int totalAssignmentsChecked = 0;
+            // Create a copy of the dictionary entries to avoid modification issues during iteration
+            var storageAssignments = _dealerStorageDictionary
+                .Where(kvp => kvp.Key != null && kvp.Value.Count > 0)
+                .ToList();
 
-            foreach (var kvp in _dealerStorageDictionary)
+            int totalAssignmentsChecked = 0;
+            int totalCollectionAttempts = 0;
+
+            // Process each storage entity separately
+            foreach (var kvp in storageAssignments)
             {
                 StorageEntity storageEntity = kvp.Key;
-                List<DealerExtendedBrain> dealers = kvp.Value;
-
-                // Skip invalid storage
-                if (storageEntity == null)
-                    continue;
+                List<DealerExtendedBrain> dealers = kvp.Value.ToList(); // Create a copy for safe iteration
 
                 // Process each dealer assigned to this storage
-                foreach (var dealerEx in dealers.ToList()) // Use ToList to avoid modification during iteration
+                foreach (var dealerEx in dealers)
                 {
-                    // Check if dealer is still valid
+                    // Skip invalid dealers
                     if (dealerEx?.Dealer == null)
                     {
-                        Core.MelonLogger.Warning($"Found invalid dealer reference, removing from storage {storageEntity.name}");
-                        dealers.Remove(dealerEx);
+                        Core.MelonLogger.Warning($"Removing invalid dealer reference from storage {storageEntity.name}");
+                        _dealerStorageDictionary[storageEntity].Remove(dealerEx);
                         continue;
                     }
 
-                    // Try to have the dealer collect items
-                    dealerEx.TryCollectItemsFromStorage(storageEntity);
                     totalAssignmentsChecked++;
+
+                    // Only try to collect if the dealer needs items
+                    if (dealerEx.CalculateNeedsItems())
+                    {
+                        bool collectionStarted = dealerEx.TryCollectItemsFromStorage(storageEntity);
+                        if (collectionStarted)
+                        {
+                            totalCollectionAttempts++;
+                        }
+                    }
                 }
             }
 
-            Core.MelonLogger.Msg($"Checked {totalAssignmentsChecked} dealer-storage assignments");
+            if (totalAssignmentsChecked > 0)
+            {
+                Core.MelonLogger.Msg($"Checked {totalAssignmentsChecked} dealer-storage assignments, {totalCollectionAttempts} dealers are collecting items");
+            }
         }
 
         // New methods for configuration

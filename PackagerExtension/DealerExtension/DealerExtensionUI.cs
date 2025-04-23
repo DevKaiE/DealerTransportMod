@@ -444,6 +444,12 @@ namespace DealerSelfSupplySystem.DealerExtension
             {
                 TogglePanel();
             }
+
+            if (DealerUIObject != null && DealerUIObject.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            {
+
+                ToggleUI(false);
+            }
         }
 
         public void OnAddDealerButtonClicked()
