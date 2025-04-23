@@ -8,7 +8,7 @@ using UnityEngine;
 using Il2CppScheduleOne.Persistence;
 using DealerSelfSupplySystem.Persistence;
 
-[assembly: MelonInfo(typeof(DealerSelfSupplySystem.Core), "DealerSelfSupplySystem", "1.1.1", "KaikiNoodles", null)]
+[assembly: MelonInfo(typeof(DealerSelfSupplySystem.Core), "DealerSelfSupplySystem", "1.2.0", "KaikiNoodles", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 namespace DealerSelfSupplySystem
